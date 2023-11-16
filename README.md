@@ -1,2 +1,2 @@
-# Instruments for Simple Touch
+# Designed for Simple Touch
 
