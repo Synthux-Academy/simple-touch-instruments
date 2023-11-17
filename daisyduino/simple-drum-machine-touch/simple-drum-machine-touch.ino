@@ -23,14 +23,8 @@ static SimpleBD bd;
 static SimpleSD sd;
 static HiHat<> hh;
 
-static const int kRunPin = D(S30);
-static const int kSwitchPin = D(S10);
 static const int kSpeedPin = A(S37);
-static const int kPatternPin = A(S32);
-static const int kShiftPin = A(S33);
-static MultiKnob<2> speed_swing_knob({ 512, 0 }); //Tempo 140, Swing 0
-static MultiKnob<3> pattern_knob({ 512, 128, 1023 }); //BD 4 onsets, SD 2 onsets, HH 16 onsets
-static MultiKnob<3> shift_knob({ 0, 256, 0 }); //SD 1/4th shift
+static const int kSwingPin = A(S36);
 
 float output = 0;
 bool is_playing = false; 
@@ -52,14 +46,12 @@ static const float kSecPerMin = 60.f;
 static const float kMinFreq = 24 * 40 / 60.f;
 static const float kFreqRange = Trigger::kPPQN * kBPMRange / kSecPerMin;
 
-void OnTerminalNoteOn(uint8_t num, uint8_t vel) {
-  if (num == 3) bd_track.Hit();
-  else if (num == 4) sd_track.Hit();
-  else if (num == 6) hh_track.Hit();
-} 
-
-void OnTerminalNoteOff(uint8_t num) {
-
+void OnTapPad(uint8_t pad) {
+  switch pad {
+    case 3: bd_track.Hit(); break;
+    case 4: sd_track.Hit(); break;
+    case 6: hh_track.Hit(); break;
+  }
 }
 
 void AudioCallback(float **in, float **out, size_t size) {  
@@ -69,8 +61,8 @@ void AudioCallback(float **in, float **out, size_t size) {
     sd_trig = false;  
     hh_trig = false;    
     auto t = metro.Process();
-    if (t) {
-      if (is_playing) {
+    if (is_playing) {
+      if (t) {
         if (clck_cnt-- == 0) {
           blink = true;
           clck_trig = true;
@@ -85,9 +77,9 @@ void AudioCallback(float **in, float **out, size_t size) {
           hh_trig = hh_track.Tick();
         }
       }
+      output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.6 + hh.Process(hh_trig) * 0.5 + clck.Process(clck_trig) * 0.7;
     }
-    if (is_playing) output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.6 + hh.Process(hh_trig) * 0.5 + clck.Process(clck_trig) * 0.7;
-    clck_trig = false;    
+    clck_trig = false; 
     out[0][i] = out[1][i] = output;
   }
 }
@@ -96,65 +88,39 @@ void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
 
-  Serial.begin(9600);
-
   metro.Init(96, sample_rate);
 
   bd.Init(sample_rate);
 
   sd.Init(sample_rate);
 
-  clck.Init(sample_rate);
-
   hh.Init(sample_rate);
   hh.SetDecay(0.7);
   hh.SetTone(0.8);
   hh.SetNoisiness(0.7);
 
-  term.Init();
-  term.SetOnNoteOn(OnTerminalNoteOn);
-  term.SetOnNoteOff(OnTerminalNoteOff);
+  clck.Init(sample_rate);
 
-  pinMode(kSwitchPin, INPUT_PULLUP);
-  pinMode(kRunPin, INPUT_PULLUP);
+  term.Init();
+  term.SetOnTap(OnTapPad);
+
   pinMode(LED_BUILTIN, OUTPUT);
 
   DAISY.begin(AudioCallback);
 }
 
-void SetIsPlaying(bool value) {
-  // if (value && !is_playing) {
-  //   trig.Reset();
-  //   bd_pattern.Reset();
-  //   sd_pattern.Reset();
-  //   hh_pattern.Reset();
-  // }
-  is_playing = value;
+void ToggleIsPlaying() {
+  is_playing = !is_playing;
 }
 
 void loop() {
-  SetIsPlaying(digitalRead(kRunPin));
-
-  bool mode_switch = !digitalRead(kSwitchPin);
-
-  speed_swing_knob.Process(analogRead(kSpeedPin), mode_switch);
-  auto speed = 2 * speed_swing_knob.ValueAt(0) / 1023.f;
+  auto speed = 2 * analogRead(kSpeedPin) / 1023.f;
   auto freq = kMinFreq + kFreqRange * speed;
   metro.SetFreq(freq);
 
-  trig.SetSwing(speed_swing_knob.ValueAt(1) / 1023.f);
+  trig.SetSwing(analogRead(kSwingPin) / 1023.f);
 
   term.Process();
-
-  // pattern_knob.Process(analogRead(kPatternPin), mode_switch);
-  // bd_pattern.SetOnsets(pattern_knob.ValueAt(0) / 1023.f);
-  // sd_pattern.SetOnsets(pattern_knob.ValueAt(1) / 1023.f);
-  // hh_pattern.SetOnsets(pattern_knob.ValueAt(2) / 1023.f);
-
-  // shift_knob.Process(analogRead(kShiftPin), mode_switch);
-  // bd_pattern.SetShift(shift_knob.ValueAt(0) / 1023.f);
-  // sd_pattern.SetShift(shift_knob.ValueAt(1) / 1023.f);
-  // hh_pattern.SetShift(shift_knob.ValueAt(2) / 1023.f);
 
   digitalWrite(LED_BUILTIN, blink);
 }
