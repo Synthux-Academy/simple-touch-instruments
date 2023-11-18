@@ -28,20 +28,24 @@ namespace synthux {
       }
 
       // Register note on callback
-      void SetOnTap(void(*on_tap)(uint8_t pad)) {
+      void SetOnTap(void(*on_tap)(uint16_t pad)) {
         _on_tap = on_tap;
       }
 
+      bool IsTouched(uint16_t pad) {
+        return _state & (1 << pad);
+      }
+
       void Process() {
-          uint16_t pin;
+          uint16_t pad;
           bool is_touched;
           bool was_touched;
           auto state = _cap.touched();
         
           for (uint16_t i = 0; i < 12; i++) {
-            pin = 1 << i;
-            is_touched = state & pin;
-            was_touched = _state & pin;
+            pad = 1 << i;
+            is_touched = state & pad;
+            was_touched = _state & pad;
             if (is_touched && !was_touched) {
               _on_tap(i);
             }
@@ -50,7 +54,7 @@ namespace synthux {
       }
 
     private:
-      void(*_on_tap)(uint8_t pad);
+      void(*_on_tap)(uint16_t pad);
 
       Adafruit_MPR121 _cap;
       uint16_t _state;
