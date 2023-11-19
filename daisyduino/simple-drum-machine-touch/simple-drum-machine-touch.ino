@@ -78,6 +78,12 @@ void OnTapPad(uint16_t pad) {
 
 void ToggleIsPlaying() {
   is_playing = !is_playing;
+  if (is_playing) {
+    bd_track.Reset();
+    sd_track.Reset();
+    hh_track.Reset();
+    trig.Reset();
+  }
 }
 
 void ToggleRecording() {

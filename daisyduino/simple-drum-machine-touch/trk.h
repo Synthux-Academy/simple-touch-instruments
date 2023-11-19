@@ -14,6 +14,7 @@ public:
     void SetClearing(bool value) { _is_clearing = value; };
     void SetSound(float value) { _snd = value; };
     float Sound();
+    void Reset();
 
 private:
     void _clear(uint8_t);

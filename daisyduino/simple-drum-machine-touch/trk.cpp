@@ -39,3 +39,7 @@ void Track::Hit() {
 void Track::_clear(uint8_t slot) {
     _pattern[slot] = false;
 }
+
+void Track::Reset() {
+  _slot = 0;
+}
