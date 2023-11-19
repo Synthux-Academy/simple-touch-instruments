@@ -6,6 +6,7 @@
 #include "trk.h"
 #include "term.h"
 #include "click.h"
+#include "aknob.h"
 
 using namespace synthux;
 
@@ -22,20 +23,26 @@ static SimpleBD bd;
 static SimpleSD sd;
 static SimpleHH hh;
 
-static const int kSpeedPin = A(S37);
-static const int kSwingPin = A(S36);
+static AKnob bd_knob(A(S30));
+static AKnob sd_knob(A(S33));
+static AKnob hh_knob(A(S34));
+static AKnob speed_knob(A(S37));
+static AKnob swing_knob(A(S36));
 
 static const uint16_t kPlayStopPad = 0;
 static const uint16_t kRecordPad = 2;
 static const uint16_t kBDPad = 3;
 static const uint16_t kSDPad = 4;
 static const uint16_t kHHPad = 6;
+static const uint16_t kClckPad = 7;
 static const uint16_t kDeletePad = 8;
 
-float output = 0;
-bool is_playing = false; 
+
+bool clck_on = false;
 size_t clck_cnt = 0;
-bool clck_trig = false;
+bool is_playing = false;
+bool is_recording = false;
+
 const size_t clck_sycle = 2 * Trigger::kPPQN - 1;
 bool blink = false;
 
@@ -51,17 +58,36 @@ static const float kFreqRange = Trigger::kPPQN * kBPMRange / kSecPerMin;
 bool bd_trig = false;
 bool sd_trig = false; 
 bool hh_trig = false;
+bool clck_trig = false;
 
 void OnTapPad(uint16_t pad) {
-  Serial.println(pad);
   switch (pad) {
     case kPlayStopPad: ToggleIsPlaying(); break;
     case kBDPad: bd_track.Hit(); bd_trig = true; break;
     case kSDPad: sd_track.Hit(); sd_trig = true; break;
     case kHHPad: hh_track.Hit(); hh_trig = true; break;
+    case kRecordPad: ToggleRecording(); break;
+    case kClckPad: ToggleClck(); break;
   };
 }
 
+void ToggleIsPlaying() {
+  is_playing = !is_playing;
+}
+
+void ToggleRecording() {
+  is_recording = !is_recording;
+  bd_track.SetRecording(is_recording);
+  sd_track.SetRecording(is_recording);
+  hh_track.SetRecording(is_recording);
+  if (is_recording) is_playing = true;
+}
+
+void ToggleClck() {
+  clck_on = !clck_on;
+}
+
+float output = 0;
 void AudioCallback(float **in, float **out, size_t size) {  
   for (size_t i = 0; i < size; i++) {
     auto t = metro.Process();
@@ -75,11 +101,11 @@ void AudioCallback(float **in, float **out, size_t size) {
         else {
           blink = false;
         }
-      }
-      if (trig.Tick()) {
-        bd_trig = bd_trig ?: bd_track.Tick();
-        sd_trig = sd_trig ?: sd_track.Tick();
-        hh_trig = hh_trig ?: hh_track.Tick();
+        if (trig.Tick()) {
+          bd_trig = bd_trig ?: bd_track.Tick();
+          sd_trig = sd_trig ?: sd_track.Tick();
+          hh_trig = hh_trig ?: hh_track.Tick();
+        }
       }
     }
     output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.6 + hh.Process(hh_trig) * 0.5 + clck.Process(clck_trig) * 0.7;
@@ -113,23 +139,25 @@ void setup() {
   DAISY.begin(AudioCallback);
 }
 
-void ToggleIsPlaying() {
-  is_playing = !is_playing;
-}
-
 void loop() {
-  auto speed = 2 * analogRead(kSpeedPin) / 1023.f;
+  auto speed = 2 * speed_knob.Process();
   auto freq = kMinFreq + kFreqRange * speed;
   metro.SetFreq(freq);
 
-  trig.SetSwing(analogRead(kSwingPin) / 1023.f);
+  trig.SetSwing(swing_knob.Process());
 
   term.Process();
 
-  auto is_clearing = term.IsTouched(kDeletePad);
-  bd_track.SetClearing(is_clearing && term.IsTouched(kBDPad));
-  sd_track.SetClearing(is_clearing && term.IsTouched(kSDPad));
-  hh_track.SetClearing(is_clearing && term.IsTouched(kHHPad));
+  // auto is_clearing = term.IsTouched(kDeletePad);
+  // bd_track.SetClearing(is_clearing && term.IsTouched(kBDPad));
+  // sd_track.SetClearing(is_clearing && term.IsTouched(kSDPad));
+  // hh_track.SetClearing(is_clearing && term.IsTouched(kHHPad));
 
-  digitalWrite(LED_BUILTIN, blink);
+  // bd_trig.sound = bd_knob.Process();
+  // sd_trig.sound = sd_knob.Process();
+  // hh_trig.sound = hh_knob.Process();
+
+  if (is_recording) {
+    digitalWrite(LED_BUILTIN, blink);
+  }
 }

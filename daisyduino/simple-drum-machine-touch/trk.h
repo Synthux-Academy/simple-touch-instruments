@@ -10,9 +10,10 @@ public:
 
     bool Tick();
     void Hit();
-    void SetClearing(bool);
-    void SetTriggerCallback(void(*)());
-    void SetSound(float value);
+    void SetRecording(bool value) { _is_recording = value; }
+    void SetClearing(bool value) { _is_clearing = value; };
+    void SetSound(float value) { _snd = value; };
+    float Sound();
 
 private:
     void _clear(uint8_t);
@@ -23,8 +24,10 @@ private:
 
     std::array<bool, kPatternLength> _pattern;
     std::array<float, kPatternLength> _sound;
+    float _snd;
     uint8_t _counter;
     uint8_t _slot;
+    bool _is_recording;
     bool _is_clearing;
 };
 };

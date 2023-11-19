@@ -25,18 +25,17 @@ bool Track::Tick() {
     return (slot == _slot && _pattern[_slot]);
 }
 
-void Track::SetTriggerCallback(void(*val)()) {
-    _trigger = val;
+float Track::Sound() {
+  return _sound[_slot];
 }
 
 void Track::Hit() {
+  if (_is_recording) {
     _pattern[_slot] = true;
+    _sound[_slot] = _snd;
+  }
 }
 
 void Track::_clear(uint8_t slot) {
     _pattern[slot] = false;
-}
-
-void Track::SetClearing(bool val) {
-    _is_clearing = val;
 }
