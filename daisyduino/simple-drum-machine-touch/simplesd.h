@@ -16,6 +16,7 @@ public:
     _osc.Init(sample_rate);
     _osc.SetWaveform(Oscillator::WAVE_TRI);
     _osc.SetFreq(_base_freq);
+    _drv.SetDrive(0.5);
   }
 
   float Process(bool trigger) {
@@ -30,7 +31,7 @@ public:
     _base_freq = 80.f + 420.f * value;
     _noise_kof = (1 - value);
     _env.SetTime(ADSR_SEG_RELEASE, .005f + (.1f * value));
-    if (value > 0.5) _drv.SetDrive(0.1 + 0.5 * value);
+    if (value > 0.5) _drv.SetDrive(0.05 + 0.55 * value);
   }
 
 private:

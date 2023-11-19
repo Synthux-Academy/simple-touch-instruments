@@ -125,7 +125,7 @@ void AudioCallback(float **in, float **out, size_t size) {
     if (bd_trig) bd.SetSound(bd_snd);
     if (sd_trig) sd.SetSound(sd_snd);
     if (hh_trig) hh.SetSound(hh_snd);
-    output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.6 + hh.Process(hh_trig) * 0.5;
+    output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.4 + hh.Process(hh_trig) * 0.5;
     if (clck_on) output += clck.Process(clck_trig) * 0.7;
     bd_trig = false;
     sd_trig = false;  

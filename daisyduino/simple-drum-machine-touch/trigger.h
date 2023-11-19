@@ -26,7 +26,10 @@ public:
         if (_iterator == _next_tick) {
           trigger = true;
           if (++_tick_count == 16) _tick_count = 0;
-          _is_odd = !_is_odd;
+          if (++_odd_count == 2) {
+            _odd_count = 0;
+            _is_odd = !_is_odd;
+          }
           _next_tick = _tick_count * kPP16N;
           if (_is_odd) _next_tick += _swing;
         }
@@ -41,6 +44,7 @@ public:
       _tick_count = 0;
       _next_tick = 0;
       _is_odd = false;
+      _odd_count = 0;
     }
 
 private:
@@ -51,6 +55,7 @@ private:
     uint32_t _tick_count;
     uint32_t _next_tick;
     uint32_t _swing;
+    uint32_t _odd_count;
     bool _is_odd;
 };
 
