@@ -42,6 +42,7 @@ bool clck_on = false;
 size_t clck_cnt = 0;
 bool is_playing = false;
 bool is_recording = false;
+bool is_clearing = false;
 
 const size_t clck_sycle = 2 * Trigger::kPPQN - 1;
 bool blink = false;
@@ -60,12 +61,16 @@ bool sd_trig = false;
 bool hh_trig = false;
 bool clck_trig = false;
 
+float bd_snd = .5f;
+float sd_snd = .5f;
+float hh_snd = .5f;
+
 void OnTapPad(uint16_t pad) {
   switch (pad) {
     case kPlayStopPad: ToggleIsPlaying(); break;
-    case kBDPad: bd_track.Hit(); bd_trig = true; break;
-    case kSDPad: sd_track.Hit(); sd_trig = true; break;
-    case kHHPad: hh_track.Hit(); hh_trig = true; break;
+    case kBDPad: if (!is_clearing) { bd_track.Hit(); bd_trig = true; } break;
+    case kSDPad: if (!is_clearing) { sd_track.Hit(); sd_trig = true; } break;
+    case kHHPad: if (!is_clearing) { hh_track.Hit(); hh_trig = true; } break;
     case kRecordPad: ToggleRecording(); break;
     case kClckPad: ToggleClck(); break;
   };
@@ -102,13 +107,26 @@ void AudioCallback(float **in, float **out, size_t size) {
           blink = false;
         }
         if (trig.Tick()) {
-          bd_trig = bd_trig ?: bd_track.Tick();
-          sd_trig = sd_trig ?: sd_track.Tick();
-          hh_trig = hh_trig ?: hh_track.Tick();
+          if (bd_track.Tick()) {
+            bd_trig = true;
+            bd_snd = bd_track.Sound();
+          }
+          if (sd_track.Tick()) {
+            sd_trig = true;
+            sd_snd = sd_track.Sound();  
+          }
+          if (hh_track.Tick()) {
+            hh_trig = true;
+            hh_snd = hh_track.Sound();  
+          }
         }
       }
     }
-    output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.6 + hh.Process(hh_trig) * 0.5 + clck.Process(clck_trig) * 0.7;
+    if (bd_trig) bd.SetSound(bd_snd);
+    if (sd_trig) sd.SetSound(sd_snd);
+    if (hh_trig) hh.SetSound(hh_snd);
+    output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.6 + hh.Process(hh_trig) * 0.5;
+    if (clck_on) output += clck.Process(clck_trig) * 0.7;
     bd_trig = false;
     sd_trig = false;  
     hh_trig = false;
@@ -148,14 +166,17 @@ void loop() {
 
   term.Process();
 
-  // auto is_clearing = term.IsTouched(kDeletePad);
-  // bd_track.SetClearing(is_clearing && term.IsTouched(kBDPad));
-  // sd_track.SetClearing(is_clearing && term.IsTouched(kSDPad));
-  // hh_track.SetClearing(is_clearing && term.IsTouched(kHHPad));
+  is_clearing = term.IsTouched(kDeletePad);
+  bd_track.SetClearing(is_clearing && term.IsTouched(kBDPad));
+  sd_track.SetClearing(is_clearing && term.IsTouched(kSDPad));
+  hh_track.SetClearing(is_clearing && term.IsTouched(kHHPad));
 
-  // bd_trig.sound = bd_knob.Process();
-  // sd_trig.sound = sd_knob.Process();
-  // hh_trig.sound = hh_knob.Process();
+  bd_snd = bd_knob.Process();
+  bd_track.SetSound(bd_snd);
+  sd_snd = sd_knob.Process();
+  sd_track.SetSound(sd_snd);
+  hh_snd = hh_knob.Process();
+  hh_track.SetSound(hh_snd);
 
   if (is_recording) {
     digitalWrite(LED_BUILTIN, blink);

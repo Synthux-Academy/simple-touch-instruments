@@ -43,9 +43,9 @@ public:
   }
 
   void SetSound(float value) {
-    _noise_level = 0.1f * (1 - value);
-    _base_freq = 40.f + 20.f * value;
-    _amp_env.SetTime(ADSR_SEG_RELEASE, .01f + (.1f * value));
+    _noise_level = 0.07f * (1 - value);
+    _base_freq = 40.f + 20.f * (1 - value);
+    _amp_env.SetTime(ADSR_SEG_RELEASE, .005f + (.1f * value));
   }
 
 private:
