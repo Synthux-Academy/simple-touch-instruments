@@ -25,6 +25,10 @@ public:
     return _osc.Process() + _noise.Process();
   }
 
+  void SetSound(float value) {
+    
+  }
+
 private:
   Adsr _env;
   WhiteNoise _noise;

@@ -15,6 +15,10 @@ namespace synthux {
         return _hh.Process(gate);
       }
 
+      void SetSound(float value) {
+    
+      }
+
     private:
       HiHat<> _hh;
   };

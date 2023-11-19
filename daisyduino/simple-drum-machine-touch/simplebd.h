@@ -24,7 +24,7 @@ public:
 
     _osc.Init(sample_rate);
     _osc.SetWaveform(Oscillator::WAVE_SIN);
-    _osc.SetFreq(50.0);
+    _osc.SetFreq(_base_freq);
   }
 
   float Process(bool trigger) {
@@ -37,9 +37,15 @@ public:
     auto freq = _freq_env.Process(trigger);
     if (is_gate_open) gate_counter--;
     _noise.SetAmp(amp);
-    _osc.SetFreq(50.0 + freq * 1000.0);
+    _osc.SetFreq(_base_freq + freq * 1000.0);
     _osc.SetAmp(amp);
-    return _osc.Process() + _noise.Process() * 0.03;
+    return _osc.Process() + _noise.Process() * _noise_level;
+  }
+
+  void SetSound(float value) {
+    _noise_level = 0.1f * (1 - value);
+    _base_freq = 40.f + 20.f * value;
+    _amp_env.SetTime(ADSR_SEG_RELEASE, .01f + (.1f * value));
   }
 
 private:
@@ -50,6 +56,8 @@ private:
   Adsr _freq_env;
   WhiteNoise _noise;
   Oscillator _osc;
+  float _noise_level = .03f;
+  float _base_freq = 50.f;
 };
 
 };
