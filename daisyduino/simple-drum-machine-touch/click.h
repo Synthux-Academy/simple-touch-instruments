@@ -18,13 +18,29 @@ public:
   }
 
   float Process(bool trigger) {
+    if (trigger) {
+      _osc.Reset();
+      if (_counter++ == _kBeat_counts) {
+        _osc.SetFreq(300);
+        _counter = 0;
+      }
+      else {
+        _osc.SetFreq(150);
+      }
+    }
     auto amp = _env.Process(trigger);
     _osc.SetAmp(amp);
     return _osc.Process();
   }
 
+  void Reset() {
+    _counter = _kBeat_counts;
+  }
+
 private:
   Adsr _env;
   Oscillator _osc;
+  size_t _counter = _kBeat_counts;
+  static constexpr size_t _kBeat_counts = 3;
 };
 };

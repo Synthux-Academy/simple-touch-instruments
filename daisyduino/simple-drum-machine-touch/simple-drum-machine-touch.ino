@@ -83,6 +83,8 @@ void ToggleIsPlaying() {
     sd_track.Reset();
     hh_track.Reset();
     trig.Reset();
+    clck.Reset();
+    clck_cnt = 0;
   }
 }
 
@@ -102,29 +104,27 @@ float output = 0;
 void AudioCallback(float **in, float **out, size_t size) {  
   for (size_t i = 0; i < size; i++) {
     auto t = metro.Process();
-    if (is_playing) {
-      if (t) {
-        if (clck_cnt-- == 0) {
-          blink = true;
-          clck_trig = true;
-          clck_cnt = clck_sycle;
+    if (is_playing && t) {
+      if (clck_cnt-- == 0) {
+        blink = true;
+        clck_trig = true;
+        clck_cnt = clck_sycle;
+      }
+      else {
+        blink = false;
+      }
+      if (trig.Tick()) {
+        if (bd_track.Tick()) {
+          bd_trig = true;
+          bd_snd = bd_track.Sound();
         }
-        else {
-          blink = false;
+        if (sd_track.Tick()) {
+          sd_trig = true;
+          sd_snd = sd_track.Sound();  
         }
-        if (trig.Tick()) {
-          if (bd_track.Tick()) {
-            bd_trig = true;
-            bd_snd = bd_track.Sound();
-          }
-          if (sd_track.Tick()) {
-            sd_trig = true;
-            sd_snd = sd_track.Sound();  
-          }
-          if (hh_track.Tick()) {
-            hh_trig = true;
-            hh_snd = hh_track.Sound();  
-          }
+        if (hh_track.Tick()) {
+          hh_trig = true;
+          hh_snd = hh_track.Sound();  
         }
       }
     }
@@ -132,7 +132,8 @@ void AudioCallback(float **in, float **out, size_t size) {
     if (sd_trig) sd.SetSound(sd_snd);
     if (hh_trig) hh.SetSound(hh_snd);
     output = bd.Process(bd_trig) + sd.Process(sd_trig) * 0.4 + hh.Process(hh_trig) * 0.5;
-    if (clck_on) output += clck.Process(clck_trig) * 0.7;
+    auto clck_out = clck.Process(clck_trig) * 0.7;
+    if (clck_on) output += clck_out;
     bd_trig = false;
     sd_trig = false;  
     hh_trig = false;

@@ -42,4 +42,5 @@ void Track::_clear(uint8_t slot) {
 
 void Track::Reset() {
   _slot = 0;
+  _counter = 0;
 }
