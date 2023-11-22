@@ -29,7 +29,7 @@ static AKnob hh_knob(A(S34));
 static AKnob speed_knob(A(S37));
 static AKnob swing_knob(A(S36));
 
-static const uint16_t kPlayStopPad = 0;
+static const uint16_t kPlayStopPad = 10;
 static const uint16_t kRecordPad = 2;
 static const uint16_t kBDPad = 3;
 static const uint16_t kSDPad = 4;
