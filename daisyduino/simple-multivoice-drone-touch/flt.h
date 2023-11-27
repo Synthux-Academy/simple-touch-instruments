@@ -11,8 +11,8 @@ public:
   }
 
   void SetTimbre(float timbre) {
-    auto fltFreq = _map(timbre, 60.f, 15000.f);
-    auto fltRes = _map(timbre, 0.0f, 0.5f);
+    auto fltFreq = _map(timbre, 80.f, 16000.f);
+    auto fltRes = 1.f - _map(timbre, 0.3f, 1.0f);
     _flt.SetFreq(fltFreq);
     _flt.SetRes(fltRes); 
   }
