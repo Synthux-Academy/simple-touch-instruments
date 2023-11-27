@@ -21,7 +21,7 @@ void SetPortamento(float portamento) {
     _portamento = 1.f;
   }
   else {
-    _portamento = fmax(portamento, 0.2) * 0.0005;  
+    _portamento = fmax(portamento * portamento, 0.05) * 0.0005;  
   }
 }
 
