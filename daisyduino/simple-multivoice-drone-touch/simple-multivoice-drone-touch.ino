@@ -5,6 +5,7 @@
 #include "aknob.h"
 #include "memknob.h"
 #include "flt.h"
+#include "env.h"
 #include <array>
 
 static std::array<synthux::Vox, synthux::Driver::kVoices> vox;
@@ -13,13 +14,15 @@ static synthux::Terminal terminal;
 static synthux::AKnob freq_knob(A(S30));
 static synthux::AKnob spread_knob(A(S33));
 static synthux::AKnob filter_knob(A(S34));
-static synthux::AKnob portamento_knob(A(S37));
+static synthux::AKnob glide_knob(A(S37));
+static synthux::AKnob envelope_knob(A(S36));
 static int quantize_switch = D(S35);
 static int scale_a_switch = D(S08);
 static int scale_b_switch = D(S09);
 
 static synthux::Driver drive;
 static synthux::Filter filter;
+static synthux::Envelope envelope;
 
 static const int kPadsCount = 7;
 static std::array<synthux::MemKnob, kPadsCount> mk_freq;
@@ -30,10 +33,11 @@ bool gate = false;
 void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
     float output = 0;
-    if (gate) {
+    if (envelope.IsRunning() || gate) {
       for (auto& v: vox) output += v.Process(); 
+      output = filter.Process(output) * envelope.Process(gate) * 0.8;
     }
-    out[0][i] = out[1][i] = filter.Process(output);
+    out[0][i] = out[1][i] = output;
   }
 }
 
@@ -43,6 +47,7 @@ void setup() {
 
   //Serial.begin(9600);
 
+  envelope.Init(sampleRate);
   terminal.Init();
   filter.Init(sampleRate);
   for (auto& v: vox) v.Init(sampleRate);
@@ -87,11 +92,12 @@ void loop() {
   }
 
   for (auto i = 0; i < vox.size(); i++) {
-    vox[i].SetPortamento(1 - portamento_knob.Process());
+    vox[i].SetPortamento(1 - glide_knob.Process());
     vox[i].SetFreq(drive.FreqAt(i));
   }
 
   filter.SetTimbre(filter_knob.Process());
+  envelope.SetAmount(envelope_knob.Process());
 
   delay(4);
 }
