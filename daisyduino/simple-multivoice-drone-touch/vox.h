@@ -26,10 +26,13 @@ void SetPortamento(float portamento) {
 }
 
 void SetFreq(float pitch) {
+  _is_on = (pitch > 1.f);
   _targetFreq = pitch;
 }
 
 float Process() {
+    if (!_is_on) return 0;
+
     _oscFreq += (_targetFreq - _oscFreq) * _portamento;
     _osc.SetFreq(_oscFreq * (1.f + _lfo.Process()));
     return _osc.Process();
@@ -41,6 +44,7 @@ private:
   float _oscFreq;
   float _targetFreq;
   float _portamento;
+  bool _is_on;
 };
 
 };
