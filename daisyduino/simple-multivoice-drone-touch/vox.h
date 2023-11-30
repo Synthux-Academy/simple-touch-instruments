@@ -1,3 +1,4 @@
+#include <cstdlib>
 #pragma once
 
 #include "DaisyDuino.h"
@@ -28,12 +29,21 @@ void SetPortamento(float portamento) {
 void SetFreq(float pitch) {
   _is_on = (pitch > 1.f);
   _targetFreq = pitch;
+  _is_gliding = true;
 }
 
 float Process() {
     if (!_is_on) return 0;
-
-    _oscFreq += (_targetFreq - _oscFreq) * _portamento;
+    if (_is_gliding) {
+      auto delta = (_targetFreq - _oscFreq);
+      if (fabs(delta) < 0.1f) {
+        _oscFreq = _targetFreq;
+        _is_gliding = false;
+      }
+      else {
+        _oscFreq += delta * _portamento;
+      }
+    }
     _osc.SetFreq(_oscFreq * (1.f + _lfo.Process()));
     return _osc.Process();
 }
@@ -45,6 +55,7 @@ private:
   float _targetFreq;
   float _portamento;
   bool _is_on;
+  bool _is_gliding;
 };
 
 };

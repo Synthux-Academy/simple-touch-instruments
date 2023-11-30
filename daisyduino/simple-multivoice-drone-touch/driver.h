@@ -5,7 +5,7 @@ namespace synthux {
 
 class Driver {
 public:
-  static constexpr size_t kVoices = 5;
+  static constexpr size_t kVoices = 4;
 
   Driver(): 
     _base_freq    { _scale[1][0] },
@@ -38,7 +38,6 @@ private:
     _freqs[1] = _Freq(_base_freq, 1.5f);
     _freqs[2] = _Freq(_base_freq, 2.0f);
     _freqs[3] = _Freq(_freqs[2], 1.5f);
-    _freqs[4] = _Freq(_freqs[2], 2.0f);
   }
 
   void _SetFreqQuantized() {
@@ -47,7 +46,6 @@ private:
     _freqs[1] = _chords[index][0] * _base_freq;
     _freqs[2] = _chords[index][1] * _base_freq;
     _freqs[3] = _chords[index][2] * _base_freq;
-    _freqs[4] = 0;
   }
 
   float _map(float val, float min, float max) {
