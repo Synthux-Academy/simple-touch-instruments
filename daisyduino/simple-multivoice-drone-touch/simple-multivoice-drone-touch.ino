@@ -12,13 +12,13 @@ static std::array<synthux::Vox, synthux::Driver::kVoices> vox;
 
 static synthux::Terminal terminal;
 static synthux::AKnob freq_knob(A(S30));
-static synthux::AKnob spread_knob(A(S33));
-static synthux::AKnob filter_knob(A(S37));
-static synthux::AKnob glide_knob(A(S34));
+static synthux::AKnob spread_knob(A(S32));
+static synthux::AKnob glide_knob(A(S33));
 static synthux::AKnob envelope_knob(A(S36));
-static int quantize_switch = D(S35);
-static int scale_a_switch = D(S08);
-static int scale_b_switch = D(S09);
+static synthux::AKnob filter_knob(A(S37));
+static int quantize_switch = D(S07);
+static int scale_a_switch = D(S09);
+static int scale_b_switch = D(S10);
 
 static synthux::Driver drive;
 static synthux::Filter filter;
