@@ -23,7 +23,7 @@ static synthux::AKnob pitch_fader(A(S37));
 
 static std::array<synthux::MKnob, 7> position_mem;
 
-// static const int switch_1_a = D(S07);
+static const int reverse_switch = D(S07);
 // static const int switch_1_b = D(S08);
 static const int arp_switch_a = D(S09);
 static const int arp_switch_b = D(S10);
@@ -127,11 +127,11 @@ void setup() {
   // INIT SWITCHES
   pinMode(arp_switch_a, INPUT_PULLUP);
   pinMode(arp_switch_b, INPUT_PULLUP);
-  // pinMode(switch_2_a, INPUT_PULLUP);
+  pinMode(reverse_switch, INPUT_PULLUP);
   // pinMode(switch_2_b, INPUT_PULLUP);
 
   buf.Init(sdram_buf, kBufferLenghtSamples);
-  gen.Init(&buf, sample_rate);
+  gen.Init(&buf);
   arp.SetOnTrigger(OnArpTrig);
   mtr.Init(96, sample_rate); //96Hz = 48ppqn @ 120bpm 
 
@@ -178,7 +178,10 @@ void loop() {
   else {
     gen.SetSpeed(0.5);
   }
-  
+
+  //Reverse
+  bool is_reverse = digitalRead(reverse_switch);
+  gen.SetReverse(is_reverse);
 
   //Arp mode
   bool is_forward = !digitalRead(arp_switch_b);
