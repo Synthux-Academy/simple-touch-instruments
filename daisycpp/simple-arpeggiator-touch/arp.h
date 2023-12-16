@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../utils.h"
+
 namespace synthux {
 
   enum class ArpDirection {
@@ -137,9 +139,9 @@ namespace synthux {
 
       // Randomize note
       if (_rand_chance > 0.05 && _rand_chance < 0.95) {
-        auto rnd = static_cast<float>(random(0, 100)) / 100.f;  
+        auto rnd = static_cast<float>(randomrange(0, 100)) / 100.f;  
         if (rnd <= _rand_chance) {
-          note_idx = _input_order[random(0, _size - 2)];
+          note_idx = _input_order[randomrange(0, _size - 2)];
         }
      }
 
