@@ -1,6 +1,8 @@
 #pragma once
 
-#include "DaisyDuino.h"
+#include "daisysp.h"
+
+using namespace daisysp;
 
 namespace synthux {
 
@@ -13,7 +15,9 @@ void Init(float sample_rate) {
 
   // LFO SETUP
   _lfo.Init(sample_rate);
-  _lfo.SetFreq(random(50, 150) / 10.f);
+
+  int v = rand() % 50 + 100;
+  _lfo.SetFreq(v / 10.f);
   _lfo.SetWaveform(Oscillator::WAVE_TRI);
   _lfo.SetAmp(0.005);
 
