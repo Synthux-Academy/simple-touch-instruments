@@ -137,9 +137,11 @@ namespace synthux {
 
       // Randomize note
       if (_rand_chance > 0.05 && _rand_chance < 0.95) {
-        auto rnd = static_cast<float>(random(0, 100)) / 100.f;  
+        int v = rand() % 100;
+        auto rnd = static_cast<float>(v) / 100.f;  
         if (rnd <= _rand_chance) {
-          note_idx = _input_order[random(0, _size - 2)];
+          int v = rand() % _size - 2;
+          note_idx = _input_order[v];
         }
      }
 
