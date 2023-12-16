@@ -1,6 +1,7 @@
 #pragma once
 
 #include "daisysp.h"
+#include "../utils.h"
 
 using namespace daisysp;
 
