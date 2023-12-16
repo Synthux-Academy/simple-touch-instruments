@@ -88,7 +88,7 @@ void AudioCallback(float **in, float **out, size_t size) {
 
 ///////////////////////////////////////////////////////////////
 // Allocate buffer in SDRAM ////////////////////////////////// 
-static const uint32_t kBufferLengthSec = 5;
+static const uint32_t kBufferLengthSec = 7;
 static const uint32_t kSampleRate = 48000;
 static const size_t kBufferLenghtSamples = kBufferLengthSec * kSampleRate;
 static float DSY_SDRAM_BSS buf0[kBufferLenghtSamples];
