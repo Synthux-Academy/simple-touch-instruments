@@ -2,7 +2,7 @@
 #include "daisysp.h"
 
 #include "vox.h"
-//#include "arp.h"
+#include "arp.h"
 //#include "term.h"
 //#include "scale.h"
 
