@@ -45,6 +45,10 @@ class Touch {
       return _state & (1 << pad);
     }
 
+    bool HasTouched() {
+      return _state > 0;
+    }
+
     void Process() {
         uint16_t pad;
         bool is_touched;

@@ -9,6 +9,7 @@
 #include "cpattern.h"
 #include "mknob.h"
 #include "trigarp.h"
+#include "clk.h"
 
 ////////////////////////////////////////////////////////////
 ///////////////////// KNOBS & SWITCHES /////////////////////
@@ -28,6 +29,8 @@ static const int reverse_switch = D(S07);
 static const int arp_switch_a = D(S09);
 static const int arp_switch_b = D(S10);
 
+static const int clk_pin = D(S31);
+
 ////////////////////////////////////////////////////////////
 ////////////////////////// TOUCH  //////////////////////////
 static synthux::simpletouch::Touch touch;
@@ -36,19 +39,21 @@ static constexpr int kLowPad = 3;
 static constexpr int kHighPad = kLowPad + kPadsUsed - 1; 
 static constexpr int kRecordPad = 0;
 
+static constexpr uint32_t kPPQN = 48;
 ///////////////////////////////////////////////////////////////
 ///////////////////////// MODULES /////////////////////////////
 static synthux::Buffer buf;
 static synthux::Generator<kPadsUsed> gen;
 static synthux::CPattern ptn;
-static synthux::Trigger trig;
+static synthux::Trigger<kPPQN> trig;
 static synthux::TrigArp<kPadsUsed> arp;
-static Metro mtr;
+static synthux::Clock<kPPQN> clk;
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////// CALLBACKS ///////////////////////////
 void OnTouch(uint16_t pad) {
   if (pad >= kLowPad && pad <= kHighPad) {
+    if (!clk.IsRunning()) clk.ToggleIsRunning();
     arp.SetTrigger(pad - kLowPad, 127);
   }
 }
@@ -56,6 +61,12 @@ void OnTouch(uint16_t pad) {
 void OnRelease(uint16_t pad) {
   if (pad >= kLowPad && pad <= kHighPad) {
     arp.RemoveTrigger(pad - kLowPad);
+    if (!touch.HasTouched() && clk.IsRunning()) {
+      clk.ToggleIsRunning();
+      trig.Reset();
+      ptn.Reset();
+      arp.Reset();
+    }
   }
 }
 
@@ -67,13 +78,11 @@ void AudioCallback(float **in, float **out, size_t size) {
   auto out0 = 0.f;
   auto out1 = 0.f;
 
-  for (size_t i = 0; i < size; i++) {
-    if (mtr.Process() && trig.Tick() && ptn.Tick()) {
-      arp.Tick();
-    }
+  clk.Tick();
 
+  for (size_t i = 0; i < size; i++) {
     if (is_recording) {
-      buf.Write(in[0][i], in[1][i]);
+      buf.Write(in[0][i], in[1][i]); 
       out[0][i] = in[0][i];
       out[1][i] = in[1][i];
       continue;
@@ -97,15 +106,17 @@ static float* sdram_buf[2] = { buf0, buf1 };
 
 ////////////////////////////////////////////////////////////
 /////////////////// TEMPO 40 - 240BMP //////////////////////
-//Metro F = ppqn * (minBPM + BPMRange * (0...1)) / secPerMin
-static const float kMinBPM = 40;
-static const float kBPMRange = 200;
+//Metro F = ppqn * (minBPM + BPMRange * (0...1)) / secPerMin/Users/vlad/Desktop/clock.h /Users/vlad/Desktop/clock.cpp
 static const float kSecPerMin = 60.f;
 static const float kMinFreq = 24 * 40 / 60.f;
-static const float kFreqRange = synthux::Trigger::kPPQN * kBPMRange / kSecPerMin;
+static const float kFreqRange = kPPQN * synthux::kBPMMin / kSecPerMin;
+
+void OnClockTick() {
+  if (trig.Tick() && ptn.Tick()) arp.Tick();
+}
 
 ///////////////////////////////////////////////////////////////
-//Arpeggiator callbacks ////////.......////////////////////////
+//Arpeggiator callbacks ///////////////////////////////////////
 void OnArpTrig(uint8_t slice_num, uint8_t vel) {
   gen.Activate(slice_num);
 };
@@ -115,9 +126,10 @@ void OnArpTrig(uint8_t slice_num, uint8_t vel) {
 void setup() {
   // SETUP DAISY
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
-  auto sample_rate = DAISY.get_samplerate();
+  auto sample_rate = DAISY.AudioSampleRate();
+  auto buffer_size = DAISY.AudioBlockSize();
 
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   // INIT TOUCH SENSOR
   touch.Init();
@@ -133,7 +145,10 @@ void setup() {
   buf.Init(sdram_buf, kBufferLenghtSamples);
   gen.Init(&buf);
   arp.SetOnTrigger(OnArpTrig);
-  mtr.Init(96, sample_rate); //96Hz = 48ppqn @ 120bpm 
+
+  clk.Init(sample_rate, buffer_size);
+  clk.SetOnTick(OnClockTick);
+  pinMode(clk_pin, INPUT);
 
   // BEGIN CALLBACK
   DAISY.begin(AudioCallback);
@@ -156,8 +171,8 @@ void loop() {
 
   // Speed
   auto speed = speed_knob.Process();
-  auto freq = kMinFreq + kFreqRange * speed;
-  mtr.SetFreq(freq);
+  clk.SetTempo(speed);
+  clk.Process(!digitalRead(clk_pin));
 
   //Recording
   auto new_is_recording = touch.IsTouched(0);
