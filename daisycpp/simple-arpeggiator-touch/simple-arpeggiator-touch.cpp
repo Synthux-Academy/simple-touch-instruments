@@ -3,8 +3,8 @@
 
 #include "vox.h"
 #include "arp.h"
-#include "term.h"
-//#include "scale.h"
+//#include "term.h"
+#include "scale.h"
 
 using namespace daisy;
 using namespace daisysp;
