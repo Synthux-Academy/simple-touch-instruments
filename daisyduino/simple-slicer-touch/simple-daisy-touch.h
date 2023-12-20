@@ -45,7 +45,7 @@ class Touch {
       return _state & (1 << pad);
     }
 
-    bool HasTouched() {
+    bool HasTouch() {
       return _state > 0;
     }
 

@@ -12,24 +12,25 @@
 #include "clk.h"
 
 ////////////////////////////////////////////////////////////
-///////////////////// KNOBS & SWITCHES /////////////////////
+//////////////// KNOBS, SWITCHES and JACKS ////?////////////
 static synthux::AKnob speed_knob(A(S30));
 static synthux::AKnob pattern_knob(A(S32));
 static synthux::AKnob position_knob(A(S33));
-// static const int knob_d = A(S34);
-// static const int knob_e = A(S35);
-
 static synthux::AKnob shape_fader(A(S36));
 static synthux::AKnob pitch_fader(A(S37));
-
 static std::array<synthux::MKnob, 7> position_mem;
 
 static const int reverse_switch = D(S07);
-// static const int switch_1_b = D(S08);
 static const int arp_switch_a = D(S09);
 static const int arp_switch_b = D(S10);
 
+// Comment this if you're not
+// planning using external sync
+#define EXTERNAL_SYNC
+
+#ifdef EXTERNAL_SYNC
 static const int clk_pin = D(S31);
+#endif
 
 ////////////////////////////////////////////////////////////
 ////////////////////////// TOUCH  //////////////////////////
@@ -53,7 +54,7 @@ static synthux::Clock<kPPQN> clk;
 ///////////////////////// CALLBACKS ///////////////////////////
 void OnTouch(uint16_t pad) {
   if (pad >= kLowPad && pad <= kHighPad) {
-    if (!clk.IsRunning()) clk.ToggleIsRunning();
+    if (!clk.IsRunning()) clk.Run();
     arp.SetTrigger(pad - kLowPad, 127);
   }
 }
@@ -61,8 +62,8 @@ void OnTouch(uint16_t pad) {
 void OnRelease(uint16_t pad) {
   if (pad >= kLowPad && pad <= kHighPad) {
     arp.RemoveTrigger(pad - kLowPad);
-    if (!touch.HasTouched() && clk.IsRunning()) {
-      clk.ToggleIsRunning();
+    if (!touch.HasTouch() && clk.IsRunning()) {
+      clk.Stop();
       trig.Reset();
       ptn.Reset();
       arp.Reset();
@@ -148,7 +149,9 @@ void setup() {
 
   clk.Init(sample_rate, buffer_size);
   clk.SetOnTick(OnClockTick);
+  #ifdef EXTERNAL_SYNC
   pinMode(clk_pin, INPUT);
+  #endif
 
   // BEGIN CALLBACK
   DAISY.begin(AudioCallback);
@@ -157,22 +160,6 @@ void setup() {
 void loop() {
   //PROCESS TOUCH SENSOR
   touch.Process();
-
-  //Position
-  auto position_val = position_knob.Process();
-  for (auto i = 0; i < kPadsUsed; i++) {
-    auto is_active = touch.IsTouched(i + kLowPad);
-    position_mem[i].SetActive(is_active, position_val);
-    if (is_active) gen.SetPosition(i, position_mem[i].Process(position_val));
-  }
-  
-  ptn.SetOnsets(pattern_knob.Process());
-  gen.SetShape(shape_fader.Process());
-
-  // Speed
-  auto speed = speed_knob.Process();
-  clk.SetTempo(speed);
-  clk.Process(!digitalRead(clk_pin));
 
   //Recording
   auto new_is_recording = touch.IsTouched(0);
@@ -184,6 +171,29 @@ void loop() {
   }
   is_recording = new_is_recording;
   buf.SetRecording(is_recording);
+
+  //Position
+  auto position_val = position_knob.Process();
+  for (auto i = 0; i < kPadsUsed; i++) {
+    auto is_active = touch.IsTouched(i + kLowPad);
+    position_mem[i].SetActive(is_active, position_val);
+    if (is_active) gen.SetPosition(i, position_mem[i].Process(position_val));
+  }
+  
+  //Pattern
+  ptn.SetOnsets(pattern_knob.Process());
+
+  //Envelope
+  gen.SetShape(shape_fader.Process());
+
+  // Tempo
+  auto tempo = speed_knob.Process();
+  clk.SetTempo(tempo);
+
+  //Sync
+  #ifdef EXTERNAL_SYNC
+  clk.Process(!digitalRead(clk_pin));
+  #endif
 
   //Pitch
   auto pitch_val = pitch_fader.Process();

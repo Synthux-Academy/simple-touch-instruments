@@ -18,8 +18,24 @@ inline static bool fcomp(const float lhs, const float rhs, const int precision =
 template<size_t ppqn>
 class Clock {
 public:
-
-    Clock() = default;
+    Clock():
+      _on_tick             { nullptr },
+      _is_running          { false },
+      _is_about_to_run     { false },
+      _tr_time             { 0 },
+      _ticks_per_clock     { ppqn / 4 },
+      _ticks               { 0 },
+      _fticks              { 0 },
+      _ticks_at_last_clock { 0 },
+      _tempo_ticks         { 0 },
+      _hold                { false },
+      _resync              { false },
+      _manual_tempo        { 120 },
+      _raw_manual_tempo    { 120 },
+      _tempo_mks           { 500000 }
+      _last_state          { 1 } 
+      {}
+    
     ~Clock() = default;
 
     void Init(float sample_rate, float buffer_size) {
@@ -77,15 +93,14 @@ public:
     starts on the first tick of the external clock.
     see clock_in_tick() below.
     */
-    void ToggleIsRunning() {
-        if (!_is_running) {
-            if (external_clock()) _is_about_to_run = true;
-            else _is_running = true;
-        }
-        else {
-            _is_running = false;
-            reset();
-        }
+    void Run() {
+      if (external_clock()) _is_about_to_run = true;
+      else _is_running = true;
+    }
+
+    void Stop() {
+      _is_running = false;
+      reset();
     }
     bool IsRunning() { return _is_running; };
 
@@ -113,7 +128,7 @@ private:
     }
 
     /*
-    Derived from Maximum MIDI Music Applications in C++ by Paul Messick
+    Derived from Maximum MIDI Programmer's ToolKit Copyright ©1993-1998 by Paul Messick.
     This method generates internal ticks and also synchronises to the external clock.
     So it's called both from internal interrupt timer (audio callback in this implementation) and upon external clock tick reception.
     nticks - integer count of internal ticks
@@ -187,25 +202,25 @@ private:
         return static_cast<uint32_t>(60.f * 1e6 / tempo);
     }
 
-    void(*_on_tick)() = nullptr;
+    void(*_on_tick)();
 
-    bool _is_running = false;
-    bool _is_about_to_run = false;
+    bool _is_running;
+    bool _is_about_to_run;
 
     uint32_t _tr_time;
-    uint32_t _ticks_per_clock = ppqn / 4;
-    uint32_t _ticks = 0;
-    uint32_t _fticks = 0;
-    uint32_t _ticks_at_last_clock = 0;
-    uint32_t _tempo_ticks = 0;
-    bool _hold = false;
-    bool _resync = false;
+    uint32_t _ticks_per_clock;
+    uint32_t _ticks;
+    uint32_t _fticks;
+    uint32_t _ticks_at_last_clock;
+    uint32_t _tempo_ticks;
+    bool _hold;
+    bool _resync;
 
-    float _manual_tempo = 120;
-    float _raw_manual_tempo = _manual_tempo;
-    uint32_t _tempo_mks = 500000;
+    float _manual_tempo;
+    float _raw_manual_tempo;
+    uint32_t _tempo_mks;
 
-    int _last_state = 1;
+    int _last_state;
 };
 
 };
