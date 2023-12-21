@@ -12,7 +12,7 @@
 #include "clk.h"
 
 ////////////////////////////////////////////////////////////
-//////////////// KNOBS, SWITCHES and JACKS ////?////////////
+//////////////// KNOBS, SWITCHES and JACKS /////////////////
 static synthux::AKnob speed_knob(A(S30));
 static synthux::AKnob pattern_knob(A(S32));
 static synthux::AKnob position_knob(A(S33));

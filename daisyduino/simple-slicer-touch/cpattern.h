@@ -1,3 +1,5 @@
+////////////////////////////////////////////////////////////
+// PATTERN GENERATOR ///////////////////////////////////////
 #pragma once
 #include <array>
 
@@ -30,7 +32,7 @@ public:
         if (onsets == 0) { _pattern.fill(0); return; }
         else if (onsets == kSize) { _pattern.fill(1); return; }
 
-        // Christoffel word algorythm ------------------------
+        // Christoffel word algorythm ///////////////////////////////////
         // Derrived from "Creating Rhythms" (ISBN: 9781887187220)
         // by Stefan Hollos and J. Richard Hollos
         auto y = onsets, a = y;
@@ -54,7 +56,7 @@ public:
             _pattern[i + offset] = _pattern[i];
             i++;
         }
-        //----------------------------------------------------
+        ///////////////////////////////////////////////////////////////////
     }
 
     bool Tick() {
