@@ -1,7 +1,9 @@
 #pragma once
 
-#include "Adafruit_MPR121.h"
+#include "daisy.h"
 #include <array>
+
+using namespace daisy;
 
 namespace synthux {
   class Terminal {
@@ -21,14 +23,6 @@ namespace synthux {
         // Uncomment if you want to use i2C4
         // Wire.setSCL(D13);
         // Wire.setSDA(D14);
-        
-        if (!_cap.begin(0x5A)) {
-          Serial.println("MPR121 not found, check wiring?");
-          while (1) {
-            Serial.println("PLEASE CONNECT MPR121 TO CONTINUE TESTING");
-            delay(200);
-          }
-        }
       }
 
       // Register note on callback
@@ -53,7 +47,7 @@ namespace synthux {
           uint16_t pin;
           bool is_touched;
           bool was_touched;
-          auto state = _cap.touched();
+          auto state = _cap.Touched();
 
           for (uint16_t i = 0; i < 12; i++) {
             pin = 1 << i;
@@ -107,7 +101,7 @@ namespace synthux {
       void(*_on_note_off)(uint8_t num);
       void(*_on_scale_select)(uint8_t index);
 
-      Adafruit_MPR121 _cap;
+      Mpr121I2C _cap;
       uint16_t _state;
       std::array<bool, kNotesCount> _hold;
       bool _latch;
