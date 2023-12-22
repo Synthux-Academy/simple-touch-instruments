@@ -1,8 +1,7 @@
-#include "utility/DaisySP/modules/dsp.h"
-#include "WSerial.h"
-#include "mod.h"
 #pragma once
 
+#include "utility/DaisySP/modules/dsp.h"
+#include "mod.h"
 #include "buf.h"
 #include "mod.h"
 #include "win.h"
@@ -23,6 +22,8 @@ class Looper {
     _loop_start         { 0 },
     _loop_start_offset  { 0 },
     _loop_length        { 0 },
+    _win_per_loop       { 0 },
+    _win_current        { 0 },
     _last_playhead      { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
@@ -80,8 +81,9 @@ class Looper {
       // Quantize loop length to the window slope. Minimum is 2 slopes = 1 window.
       // This gives 4ms precision (win_slope = 192), which is 250 points on the turn.
       auto new_length = static_cast<size_t>(loop_length * _buffer->Length());
-      auto norm_length = (new_length / win_slope) * win_slope;
-      if (new_length - norm_length > win_slope / 2) norm_length += win_slope;
+      _win_per_loop = new_length / win_slope + 1;
+      auto norm_length = _win_per_loop * win_slope;
+      // if (new_length - norm_length > win_slope / 2) norm_length += win_slope;
       _loop_length = std::max(2 * win_slope, norm_length);
     }
   
@@ -91,8 +93,17 @@ class Looper {
 
       if (!_is_playing) return;
       
+      auto wrap = false;
       for (auto& w: _wins) {
-        if (w.IsHalf()) _Activate(w.PlayHead());
+        if (!w.IsHalf()) continue;
+        if (_win_current >= _win_per_loop - 2) { //-2 because of the +2 tail above
+          if (_mode == Mode::one_shot) continue;
+          wrap = true;
+        }
+        if (_Activate(wrap ? 0 : w.PlayHead())) {
+          _win_current = wrap ? 0 : _win_current + 1;
+          break;
+        }
       }
 
       if (!_is_gate_open) {
@@ -116,7 +127,7 @@ class Looper {
     }
 
 private:
-    void _Activate(float play_head) {
+    bool _Activate(float play_head) {
       if (_direction > 0 && play_head < _last_playhead || _direction < 0 && play_head > _last_playhead) {
         if (_mode == Mode::one_shot) _is_playing = false;
         if (_rand_amount > 0.02) {
@@ -129,9 +140,10 @@ private:
       for (auto& w: _wins) {
           if (!w.IsActive()) {
               w.Activate(play_head, _delta * _direction, _loop_start + _loop_start_offset, _loop_length);
-              break;
+              return true;
           }
       }
+      return false;
     }
 
     enum class Mode {
@@ -155,6 +167,8 @@ private:
     size_t _loop_start;
     int32_t _loop_start_offset;
     size_t _loop_length;
+    size_t _win_per_loop;
+    size_t _win_current;
     Mode _mode;
     bool _is_playing;
     bool _is_gate_open;
