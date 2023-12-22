@@ -15,10 +15,10 @@ using namespace synthux;
 ////////////////////////////////////////////////////////////
 ////////////////////////// CONTROLS ////////////////////////
 
-#define S30 D15 // SWITCH : ORDERED / AS PLAYED
-#define S31 A1  // KNOB : SPEED
-#define S32 A2  // KNOB : LENGTH
-#define S33 A3  // KNOB : DIRECTION / RANDOM
+#define S30 daisy::seed::D15.pin // SWITCH : ORDERED / AS PLAYED
+#define S31 daisy::seed::A1.pin  // KNOB : SPEED
+#define S32 daisy::seed::A2.pin  // KNOB : LENGTH
+#define S33 daisy::seed::A3.pin  // KNOB : DIRECTION / RANDOM
 
 static const int kAnalogResolution  = 7; //7bits => 0..127
 static const float kKnobMax = powf(2.f, kAnalogResolution) - 1.f;
@@ -66,6 +66,30 @@ int main(void)
 	hw.Init();
 	hw.SetAudioBlockSize(4); // number of samples handled per callback
 	hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
+
+	float sample_rate = hw.AudioSampleRate();
+	vox.Init(sample_rate);
+
+	metro.Init(48, sample_rate); //48Hz = 24ppqn @ 120bpm 
+
+	term.Init();
+	term.SetOnNoteOn(OnTerminalNoteOn);
+	term.SetOnNoteOff(OnTerminalNoteOff);
+	term.SetOnScaleSelect(OnScaleSelect);
+
+	arp.SetOnNoteOn(OnArpNoteOn);
+	arp.SetOnNoteOff(OnArpNoteOff);
+	
+	//Configure and initialize button
+    Switch switch1;
+    //Set button to pin 28, to be updated at a 1kHz  samplerate
+    switch1.Init(hw.GetPin(S30));
+
+	Led led1;
+	//Don't think I need this; led1 = Led(hw.GetPin)
+	//Don't think I need this; analogReadResolution(kAnalogResolution);
+
 	hw.StartAudio(AudioCallback);
+
 	while(1) {}
 }
