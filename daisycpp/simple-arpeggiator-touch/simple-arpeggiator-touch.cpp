@@ -79,17 +79,49 @@ int main(void)
 
 	arp.SetOnNoteOn(OnArpNoteOn);
 	arp.SetOnNoteOff(OnArpNoteOff);
-	
-	//Configure and initialize button
-    Switch switch1;
-    //Set button to pin 28, to be updated at a 1kHz  samplerate
-    switch1.Init(hw.GetPin(S30));
 
-	Led led1;
+	//Create an ADC configuration
+    AdcChannelConfig adcConfig;
+    //I think this set these Knobs up for ADC
+	adcConfig.InitSingle(hw.GetPin(S30));
+    adcConfig.InitSingle(hw.GetPin(S31));
+	adcConfig.InitSingle(hw.GetPin(S32));
+	adcConfig.InitSingle(hw.GetPin(S33));
+
+
+	//Led led1;
 	//Don't think I need this; led1 = Led(hw.GetPin)
 	//Don't think I need this; analogReadResolution(kAnalogResolution);
+	//https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
 
 	hw.StartAudio(AudioCallback);
 
 	while(1) {}
 }
+
+///////////////////////////////////////////////////////////////
+////////////////////////// LOOP ///////////////////////////////
+
+void loop() {
+  float speed = hw.adc.GetFloat(0)  / kKnobMax;
+  float freq = kMinFreq + kFreqRange * speed;
+  
+  metro.SetFreq(freq); 
+
+  hw.SetLed(term.IsLatched());
+  
+  term.Process();
+
+  float arp_lgt = hw.adc.GetFloat(2) / kKnobMax;
+  float arp_ctr = hw.adc.GetFloat(3) / kKnobMax;
+  ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
+  float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
+  arp.SetDirection(arp_dir);
+  arp.SetRandChance(arp_rnd);
+  arp.SetAsPlayed(hw.adc.GetFloat(0));
+  arp.SetNoteLength(arp_lgt);
+
+  System::Delay(4);
+}
+
+
