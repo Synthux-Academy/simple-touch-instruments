@@ -96,32 +96,28 @@ int main(void)
 
 	hw.StartAudio(AudioCallback);
 
-	while(1) {}
+	///////////////////////////////////////////////////////////////
+	////////////////////////// LOOP ///////////////////////////////
+
+	while(1) {
+		float speed = hw.adc.GetFloat(0)  / kKnobMax;
+		float freq = kMinFreq + kFreqRange * speed;
+		
+		metro.SetFreq(freq); 
+
+		hw.SetLed(term.IsLatched());
+		
+		term.Process();
+
+		float arp_lgt = hw.adc.GetFloat(2) / kKnobMax;
+		float arp_ctr = hw.adc.GetFloat(3) / kKnobMax;
+		ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
+		float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
+		arp.SetDirection(arp_dir);
+		arp.SetRandChance(arp_rnd);
+		arp.SetAsPlayed(hw.adc.GetFloat(0));
+		arp.SetNoteLength(arp_lgt);
+
+		System::Delay(4);
+	}
 }
-
-///////////////////////////////////////////////////////////////
-////////////////////////// LOOP ///////////////////////////////
-
-void loop() {
-  float speed = hw.adc.GetFloat(0)  / kKnobMax;
-  float freq = kMinFreq + kFreqRange * speed;
-  
-  metro.SetFreq(freq); 
-
-  hw.SetLed(term.IsLatched());
-  
-  term.Process();
-
-  float arp_lgt = hw.adc.GetFloat(2) / kKnobMax;
-  float arp_ctr = hw.adc.GetFloat(3) / kKnobMax;
-  ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
-  float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
-  arp.SetDirection(arp_dir);
-  arp.SetRandChance(arp_rnd);
-  arp.SetAsPlayed(hw.adc.GetFloat(0));
-  arp.SetNoteLength(arp_lgt);
-
-  System::Delay(4);
-}
-
-
