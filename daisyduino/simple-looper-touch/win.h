@@ -17,16 +17,14 @@ public:
     _play_head    { 0 },
     _delta        { 0 },
     _loop_start   { 0 },
-    _loop_length  { 0 },
     _iterator     { 0 },
     _is_active    { false }
     {}
 
-    void Activate(float start, float delta, size_t loop_start, size_t loop_length) {
+    void Activate(float start, float delta, size_t loop_start) {
         _play_head = start;
         _delta = delta;
         _loop_start = loop_start;
-        _loop_length = loop_length;
         _iterator = 0;
         _is_active = true;
     }
@@ -43,9 +41,6 @@ public:
         auto int_ph = static_cast<size_t>(_play_head);
         auto frac_ph = _play_head - int_ph;
         auto next_ph = int_ph + 1;
-
-        if (next_ph < 0) next_ph += _loop_length;
-        if (next_ph >= _loop_length) next_ph -= _loop_length;
 
         auto a0 = 0.f;
         auto a1 = 0.f;
@@ -69,8 +64,6 @@ private:
   
     void _Advance() {
         _play_head += _delta;
-        if (_play_head < 0) _play_head += _loop_length;
-        else if (_play_head >= _loop_length) _play_head -= _loop_length;
         if (++_iterator == kSize) _is_active = false;
     }
 
@@ -81,8 +74,6 @@ private:
     float _play_head;
     float _delta;
     size_t _loop_start;
-    size_t _loop_length;
-
     size_t _iterator;
     bool _is_active;
     

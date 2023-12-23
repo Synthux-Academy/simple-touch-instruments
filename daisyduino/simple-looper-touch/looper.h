@@ -21,7 +21,6 @@ class Looper {
     _release_kof        { 0.f },
     _loop_start         { 0 },
     _loop_start_offset  { 0 },
-    _loop_length        { 0 },
     _win_per_loop       { 0 },
     _win_current        { 0 },
     _last_playhead      { 0 },
@@ -39,7 +38,7 @@ class Looper {
       if (open && !_is_gate_open) {
         _volume = 1.f;
         _last_playhead = 0;
-        _Activate(0);
+        _Activate(0, false);
         _is_playing = true;
       }
       _is_gate_open = open;
@@ -64,7 +63,7 @@ class Looper {
     }
 
     void ToggleDirection() {
-      //_direction = -_direction;
+      _direction = -_direction;
     }
 
     void SetSpeed(const float value) {
@@ -77,14 +76,11 @@ class Looper {
 
     void SetLoop(const float loop_start, const float loop_length) {
       _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
-      
       // Quantize loop length to the window slope. Minimum is 2 slopes = 1 window.
       // This gives 4ms precision (win_slope = 192), which is 250 points on the turn.
-      auto new_length = static_cast<size_t>(loop_length * _buffer->Length());
-      _win_per_loop = new_length / win_slope + 1;
-      auto norm_length = _win_per_loop * win_slope;
-      // if (new_length - norm_length > win_slope / 2) norm_length += win_slope;
-      _loop_length = std::max(2 * win_slope, norm_length);
+      // Speed affects loop length. The higher is the speed the smaller is length.
+      auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
+      _win_per_loop = static_cast<size_t>(new_length / win_slope);
     }
   
     void Process(float& out0, float& out1) {
@@ -96,11 +92,11 @@ class Looper {
       auto wrap = false;
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
-        if (_win_current >= _win_per_loop - 2) { //-2 because of the +2 tail above
+        if (_win_current >= _win_per_loop - 2) { // we're instersted in the last but one window
           if (_mode == Mode::one_shot) continue;
           wrap = true;
         }
-        if (_Activate(wrap ? 0 : w.PlayHead())) {
+        if (_Activate(wrap ? 0 : w.PlayHead(), wrap)) {
           _win_current = wrap ? 0 : _win_current + 1;
           break;
         }
@@ -127,8 +123,8 @@ class Looper {
     }
 
 private:
-    bool _Activate(float play_head) {
-      if (_direction > 0 && play_head < _last_playhead || _direction < 0 && play_head > _last_playhead) {
+    bool _Activate(float play_head, bool wrap) {
+      if (wrap) {
         if (_mode == Mode::one_shot) _is_playing = false;
         if (_rand_amount > 0.02) {
           auto length = _buffer->Length();
@@ -136,10 +132,9 @@ private:
           if (_loop_start_offset < 0) _loop_start_offset += _loop_start + length;
         }
       }
-      _last_playhead = play_head;
       for (auto& w: _wins) {
           if (!w.IsActive()) {
-              w.Activate(play_head, _delta * _direction, _loop_start + _loop_start_offset, _loop_length);
+              w.Activate(play_head, _delta * _direction, _loop_start + _loop_start_offset);
               return true;
           }
       }
@@ -166,7 +161,6 @@ private:
     float _last_playhead;
     size_t _loop_start;
     int32_t _loop_start_offset;
-    size_t _loop_length;
     size_t _win_per_loop;
     size_t _win_current;
     Mode _mode;
