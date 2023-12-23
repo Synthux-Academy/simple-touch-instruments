@@ -88,11 +88,12 @@ int main(void)
 	adcConfig.InitSingle(hw.GetPin(S32));
 	adcConfig.InitSingle(hw.GetPin(S33));
 
+	//Initialize the adc with the config we just made
+    hw.adc.Init(&adcConfig, 1);
 
-	//Led led1;
-	//Don't think I need this; led1 = Led(hw.GetPin)
-	//Don't think I need this; analogReadResolution(kAnalogResolution);
 	//https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
+	Led led1;
+    led1.Init(hw.GetPin(28), false);
 
 	hw.StartAudio(AudioCallback);
 
