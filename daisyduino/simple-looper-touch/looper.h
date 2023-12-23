@@ -15,7 +15,6 @@ class Looper {
     Looper():
     _buffer             { nullptr },
     _delta              { 1.f },
-    _direction          { 1.f },
     _rand_amount        { 0 },
     _volume             { 1.f },
     _release_kof        { 0.f },
@@ -26,6 +25,7 @@ class Looper {
     _last_playhead      { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
+    _is_reverse         { false },
     _mode               { Mode::loop }
     {}
 
@@ -63,7 +63,7 @@ class Looper {
     }
 
     void ToggleDirection() {
-      _direction = -_direction;
+      _is_reverse = !_is_reverse;
     }
 
     void SetSpeed(const float value) {
@@ -80,7 +80,7 @@ class Looper {
       // This gives 4ms precision (win_slope = 192), which is 250 points on the turn.
       // Speed affects loop length. The higher is the speed the smaller is length.
       auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
-      _win_per_loop = static_cast<size_t>(new_length / win_slope);
+      _win_per_loop = std::max(static_cast<size_t>(new_length / win_slope), static_cast<size_t>(2));
     }
   
     void Process(float& out0, float& out1) {
@@ -93,10 +93,18 @@ class Looper {
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
         if (_win_current >= _win_per_loop - 2) { // we're instersted in the last but one window
-          if (_mode == Mode::one_shot) continue;
+          if (_mode == Mode::one_shot) {
+            _win_current = 0;
+            continue;
+          }
           wrap = true;
         }
-        if (_Activate(wrap ? 0 : w.PlayHead(), wrap)) {
+
+        size_t start = w.PlayHead();
+        if (wrap) {
+          start = _is_reverse ? _win_per_loop * win_slope - 1 : 0;
+        }
+        if (_Activate(start, wrap)) {
           _win_current = wrap ? 0 : _win_current + 1;
           break;
         }
@@ -134,7 +142,8 @@ private:
       }
       for (auto& w: _wins) {
           if (!w.IsActive()) {
-              w.Activate(play_head, _delta * _direction, _loop_start + _loop_start_offset);
+              auto delta = _is_reverse ? -_delta : _delta;
+              w.Activate(play_head, delta, _loop_start + _loop_start_offset);
               return true;
           }
       }
@@ -154,7 +163,6 @@ private:
     std::array<Window<win_slope>, 2> _wins;
 
     float _delta;
-    float _direction;
     float _rand_amount;
     float _volume;
     float _release_kof;
@@ -166,6 +174,7 @@ private:
     Mode _mode;
     bool _is_playing;
     bool _is_gate_open;
+    bool _is_reverse;
     
 };
 };
