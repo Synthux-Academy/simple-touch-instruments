@@ -53,7 +53,7 @@ namespace synthux {
             //On touch 
             _is_touched[i] = is_touched;
             if (is_touched && !was_touched) {  
-              if (i == 3 || i == 4 || i == 6) {
+              if (i == 3 || i == 5 || i == 7) {
                 if (_latch && _hold[i]) _SetOff(i);
                 else _SetOn(i);
                 continue;

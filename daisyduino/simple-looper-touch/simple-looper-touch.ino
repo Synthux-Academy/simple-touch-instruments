@@ -91,7 +91,7 @@ void setup() {
 }
 
 uint8_t t_act_idx = 0;
-uint8_t idx[kTracksCount] = { 3, 4, 6 };
+uint8_t idx[kTracksCount] = { 3, 5, 7 }; //Also specified in termh::line 56
 bool is_reverse_touched = false;
 
 void loop() {
