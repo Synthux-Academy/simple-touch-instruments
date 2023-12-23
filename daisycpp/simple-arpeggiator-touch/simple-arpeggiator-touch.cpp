@@ -109,13 +109,13 @@ int main(void)
 		
 		term.Process();
 
-		float arp_lgt = hw.adc.GetFloat(2) / kKnobMax;
-		float arp_ctr = hw.adc.GetFloat(3) / kKnobMax;
+		float arp_lgt = hw.adc.GetFloat(2) / kKnobMax; //duino analogRead
+		float arp_ctr = hw.adc.GetFloat(3) / kKnobMax; //duino analogRead
 		ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
 		float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
 		arp.SetDirection(arp_dir);
 		arp.SetRandChance(arp_rnd);
-		arp.SetAsPlayed(hw.adc.GetFloat(0));
+		arp.SetAsPlayed(hw.adc.GetFloat(0)); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
 		System::Delay(4);
