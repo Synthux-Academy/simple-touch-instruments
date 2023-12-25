@@ -32,7 +32,7 @@ public:
       _resync              { false },
       _manual_tempo        { 120 },
       _raw_manual_tempo    { 120 },
-      _tempo_mks           { 500000 }
+      _tempo_mks           { 500000 },
       _last_state          { 1 } 
       {}
     
