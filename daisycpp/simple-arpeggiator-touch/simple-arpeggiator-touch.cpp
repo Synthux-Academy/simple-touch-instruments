@@ -15,10 +15,10 @@ using namespace synthux;
 ////////////////////////////////////////////////////////////
 ////////////////////////// CONTROLS ////////////////////////
 
-#define S30 daisy::seed::D15.pin // SWITCH : ORDERED / AS PLAYED
-#define S31 daisy::seed::A1.pin  // KNOB : SPEED
-#define S32 daisy::seed::A2.pin  // KNOB : LENGTH
-#define S33 daisy::seed::A3.pin  // KNOB : DIRECTION / RANDOM
+#define S30 daisy::seed::D15 // SWITCH : ORDERED / AS PLAYED
+#define S31 daisy::seed::A1  // KNOB : SPEED
+#define S32 daisy::seed::A2  // KNOB : LENGTH
+#define S33 daisy::seed::A3 // KNOB : DIRECTION / RANDOM
 
 static const int kAnalogResolution  = 7; //7bits => 0..127
 static const float kKnobMax = powf(2.f, kAnalogResolution) - 1.f;
@@ -81,15 +81,16 @@ int main(void)
 	arp.SetOnNoteOff(OnArpNoteOff);
 
 	//Create an ADC configuration
-    AdcChannelConfig adcConfig;
-    //I think this set these Knobs up for ADC
-	adcConfig.InitSingle(hw.GetPin(S30));
-    adcConfig.InitSingle(hw.GetPin(S31));
-	adcConfig.InitSingle(hw.GetPin(S32));
-	adcConfig.InitSingle(hw.GetPin(S33));
+	const int NUM_ADC_CHANNELS = 4;
+	AdcChannelConfig adcConfig;
+	adcConfig.InitSingle(S30);
+	adcConfig.InitSingle(S31);
+	adcConfig.InitSingle(S32);
+	adcConfig.InitSingle(S33);
+
 
 	//Initialize the adc with the config we just made
-    hw.adc.Init(&adcConfig, 1);
+    hw.adc.Init(&adcConfig, NUM_ADC_CHANNELS);
 
 	//https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
 	Led led1;
