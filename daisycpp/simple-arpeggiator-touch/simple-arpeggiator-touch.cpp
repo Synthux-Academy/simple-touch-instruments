@@ -91,6 +91,7 @@ int main(void)
 
 	//Initialize the adc with the config we just made
     hw.adc.Init(&adcConfig, NUM_ADC_CHANNELS);
+	hw.adc.Start();	
 
 	//https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
 	Led led1;
