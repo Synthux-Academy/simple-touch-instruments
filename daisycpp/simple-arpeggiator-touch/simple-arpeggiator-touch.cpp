@@ -44,6 +44,8 @@ static const float kSecPerMin = 60.f;
 static const float kMinFreq = 24 * 40 / 60.f;
 static const float kFreqRange = kPPQN * kBPMRange / kSecPerMin;
 
+////////////////////////////////////////////////////////////
+///////////////////// CALLBACKS ////////////////////////////
 
 void OnScaleSelect(uint8_t index) { scale.SetScaleIndex(index); }
 void OnTerminalNoteOn(uint8_t num, uint8_t vel) { arp.NoteOn(num, vel); }
@@ -55,55 +57,60 @@ DaisySeed hw;
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size)
 {
-	for (size_t i = 0; i < size; i++) {
-		if (metro.Process()) arp.Trigger();
+  for (size_t i = 0; i < size; i++) {
+    if (metro.Process()) arp.Trigger();
 		out[0][i] = out[1][i] = vox.Process();
-	}
+  }
 }
 
-int main(void)
+int main(void) 
 {
-	hw.Init();
-	hw.SetAudioBlockSize(4); // number of samples handled per callback
-	hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
+  hw.Init();
+  hw.SetAudioBlockSize(4); // number of samples handled per callback
+  hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
 
-	float sample_rate = hw.AudioSampleRate();
+ 	float sample_rate = hw.AudioSampleRate();
 	vox.Init(sample_rate);
 
-	metro.Init(48, sample_rate); //48Hz = 24ppqn @ 120bpm 
+  metro.Init(48, sample_rate); //48Hz = 24ppqn @ 120bpm
 
-	term.Init();
-	term.SetOnNoteOn(OnTerminalNoteOn);
+  term.Init();
+  term.SetOnNoteOn(OnTerminalNoteOn);
 	term.SetOnNoteOff(OnTerminalNoteOff);
 	term.SetOnScaleSelect(OnScaleSelect);
 
 	arp.SetOnNoteOn(OnArpNoteOn);
 	arp.SetOnNoteOff(OnArpNoteOff);
 
-	//Create an ADC configuration
+  //Create an ADC configuration
 	const int NUM_ADC_CHANNELS = 4;
-	AdcChannelConfig adcConfig;
-	adcConfig.InitSingle(S30);
-	adcConfig.InitSingle(S31);
-	adcConfig.InitSingle(S32);
-	adcConfig.InitSingle(S33);
+	AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
+	adcConfig[0].InitSingle(S30);
+	adcConfig[1].InitSingle(S31);
+	adcConfig[2].InitSingle(S32);
+	adcConfig[3].InitSingle(S33);
+  
+  //Initialize the adc with the config we just made
+  hw.adc.Init(adcConfig, NUM_ADC_CHANNELS);
+  hw.adc.Start();
 
-
-	//Initialize the adc with the config we just made
-    hw.adc.Init(&adcConfig, NUM_ADC_CHANNELS);
-	hw.adc.Start();	
-
-	//https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
+  //https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
 	Led led1;
     led1.Init(hw.GetPin(28), false);
 
 	hw.StartAudio(AudioCallback);
 
-	///////////////////////////////////////////////////////////////
+  // Enable Logging, and set up the USB connection.
+  hw.StartLog(true);
+
+  // And Print Hello World!
+  hw.PrintLine("Hello World. You working?? !!!");
+
+  ///////////////////////////////////////////////////////////////
 	////////////////////////// LOOP ///////////////////////////////
 
-	while(1) {
-		float speed = hw.adc.GetFloat(0)  / kKnobMax;
+  while (1) {
+    float speed = hw.adc.GetFloat(0)  / kKnobMax;
 		float freq = kMinFreq + kFreqRange * speed;
 		
 		metro.SetFreq(freq); 
@@ -122,5 +129,5 @@ int main(void)
 		arp.SetNoteLength(arp_lgt);
 
 		System::Delay(4);
-	}
+  }
 }
