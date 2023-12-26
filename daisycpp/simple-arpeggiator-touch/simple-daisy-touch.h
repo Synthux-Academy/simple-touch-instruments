@@ -25,14 +25,13 @@ class Touch {
       // Uncomment if you want to use i2C4
       // Wire.setSCL(D13);
       // Wire.setSDA(D14);
-      
+      _hw = hw;
       Mpr121I2C::Config config;
       
       int result = _cap.Init(config);
-      hw.PrintLine("cap init: %d", result);
     
       if (result != 0) {
-        hw.PrintLine("MPR121 config failed");
+        _hw.PrintLine("MPR121 config failed");
       }
     }
 
@@ -77,6 +76,7 @@ class Touch {
     void(*_on_touch)(uint16_t pad);
     void(*_on_release)(uint16_t pad);
     Mpr121I2C _cap;
+    DaisySeed _hw;
 };
 
 ///////////////////////////////////////////////////////////////
