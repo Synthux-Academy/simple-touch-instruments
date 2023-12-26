@@ -63,7 +63,6 @@ DaisySeed hw;
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size)
 {
-  //hw.PrintLine("asPlayedSwitch %d", asPlayedSwitch.Read());
   for (size_t i = 0; i < size; i++) {
     if (metro.Process()) arp.Trigger();
 		out[0][i] = out[1][i] = vox.Process();
