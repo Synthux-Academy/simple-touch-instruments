@@ -39,7 +39,7 @@ enum AdcChannel {
 
 // Comment this if you're not
 // planning using external sync
-#define EXTERNAL_SYNC
+//#define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
 static const Pin clk_pin = Digital::S32;

@@ -82,8 +82,7 @@ class Touch {
 ///////////////////////////////////////////////////////////////
 //////////////////////////// PINS /////////////////////////////
 //Probably can simplify this since Analog and Digital share pins
-class Analog {
-  public:
+namespace Analog {
     static constexpr Pin S30 = A0;
     static constexpr Pin S31 =A1;
     static constexpr Pin S32 =A2;
@@ -94,8 +93,7 @@ class Analog {
     static constexpr Pin S37 =A7;
 };
 
-class Digital {
-  public:
+namespace Digital {
     static constexpr Pin S07 = D6;
     static constexpr Pin S08 =D7;
     static constexpr Pin S09 =D8;
@@ -121,7 +119,7 @@ public:
   }
 };
 
-using DaisyPin = PinST<Analog, Digital>;
+//using DaisyPin = PinST<Analog, Digital>;
 
 };
 };
