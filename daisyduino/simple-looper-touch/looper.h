@@ -17,7 +17,6 @@ class Looper {
     _loop_start_offset  { 0 },
     _win_per_loop       { 0 },
     _win_current        { 0 },
-    _last_playhead      { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
     _is_reverse         { false },
@@ -31,7 +30,6 @@ class Looper {
     void SetGateOpen(bool open) {
       if (open && !_is_gate_open) {
         _volume = 1.f;
-        _last_playhead = 0;
         _Activate(0);
         _is_playing = true;
       }
