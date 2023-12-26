@@ -26,7 +26,6 @@ namespace synthux {
         _hw = hw;
         
         Mpr121I2C::Config config;
-        config.transport_config.dev_addr = 0x5B;
       
         int result = _cap.Init(config);
         hw.PrintLine("cap init: %d", result);
