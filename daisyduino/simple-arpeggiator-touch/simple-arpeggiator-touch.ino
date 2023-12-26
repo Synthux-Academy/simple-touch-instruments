@@ -12,7 +12,22 @@
 using namespace synthux;
 
 ////////////////////////////////////////////////////////////
+<<<<<<< HEAD
 /////////////////////// CONSTANTS //////////////////////////
+=======
+////////////////////////// CONTROLS ////////////////////////
+
+#define S30 D15 // SWITCH : ORDERED / AS PLAYED
+#define S31 A1  // KNOB : SPEED
+#define S32 A2  // KNOB : LENGTH
+#define S33 A3  // KNOB : DIRECTION / RANDOM
+
+static const int kAnalogResolution  = 7; //7bits => 0..127
+static const float kKnobMax = powf(2.f, kAnalogResolution) - 1.f;
+
+////////////////////////////////////////////////////////////
+///////////////////// MODULES //////////////////////////////
+>>>>>>> 5a0f76a (Change switch back to S30)
 
 static const uint8_t kAnalogResolution = 7; //7bits => 0..127
 static const uint8_t kNotesCount = 8;

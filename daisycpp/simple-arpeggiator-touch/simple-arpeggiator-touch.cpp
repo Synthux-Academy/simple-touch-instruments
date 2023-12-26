@@ -102,9 +102,7 @@ int main(void)
   hw.adc.Init(adcConfig, NUM_ADC_CHANNELS);
   hw.adc.Start();
 
-  //https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
-	Led led1;
-  led1.Init(hw.GetPin(28), false);
+  hw.SetLed(false);
 
 	hw.StartAudio(AudioCallback);
 
