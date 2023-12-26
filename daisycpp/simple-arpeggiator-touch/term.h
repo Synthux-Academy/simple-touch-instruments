@@ -27,16 +27,13 @@ namespace synthux {
         
         Mpr121I2C::Config config;
         config.transport_config.dev_addr = 0x5B;
-        hw.PrintLine("cap init: %d", _cap.Init(config));
-      /**
-        if (!_cap.Init(config)) {
-          hw.PrintLine("MPR121 not found, check wiring?");
-          while (1) {
-            hw.PrintLine("PLEASE CONNECT MPR121 TO CONTINUE TESTING");
-            System::Delay(1000);
-          }
+      
+        int result = _cap.Init(config);
+        hw.PrintLine("cap init: %d", result);
+      
+        if (result != 0) {
+          hw.PrintLine("MPR121 config failed");
         }
-        */
       }
       
 
