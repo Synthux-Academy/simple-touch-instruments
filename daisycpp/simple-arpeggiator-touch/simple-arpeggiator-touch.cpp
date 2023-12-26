@@ -29,9 +29,6 @@ enum AdcChannel {
 #define S32 daisy::seed::A2  // KNOB : LENGTH
 #define S33 daisy::seed::A3 // KNOB : DIRECTION / RANDOM
 
-static const int kAnalogResolution  = 7; //7bits => 0..127
-static const float kKnobMax = powf(2.f, kAnalogResolution) - 1.f;
-
 ////////////////////////////////////////////////////////////
 ///////////////////// MODULES //////////////////////////////
 
@@ -119,7 +116,7 @@ int main(void)
 	////////////////////////// LOOP ///////////////////////////////
 
   while (1) {
-    float speed = hw.adc.GetFloat(speedKnobb)  / kKnobMax;
+    float speed = hw.adc.GetFloat(speedKnobb);
 		float freq = kMinFreq + kFreqRange * speed;
 
 		metro.SetFreq(freq); 
@@ -128,8 +125,8 @@ int main(void)
 
 		term.Process();
       		
-		float arp_lgt = hw.adc.GetFloat(lengthKnob) / kKnobMax; //duino analogRead
-		float arp_ctr = hw.adc.GetFloat(directionKnob) / kKnobMax; //duino analogRead
+		float arp_lgt = hw.adc.GetFloat(lengthKnob); //duino analogRead
+		float arp_ctr = hw.adc.GetFloat(directionKnob); //duino analogRead
 		ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
 		float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
 		arp.SetDirection(arp_dir);
