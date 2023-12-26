@@ -1,9 +1,5 @@
 #pragma once
-
-#include "utility/DaisySP/modules/dsp.h"
-#include "mod.h"
 #include "buf.h"
-#include "mod.h"
 #include "win.h"
 #include <array>
 
@@ -15,7 +11,6 @@ class Looper {
     Looper():
     _buffer             { nullptr },
     _delta              { 1.f },
-    _rand_amount        { 0 },
     _volume             { 1.f },
     _release_kof        { 0.f },
     _loop_start         { 0 },
@@ -29,16 +24,15 @@ class Looper {
     _mode               { Mode::loop }
     {}
 
-    void Init(Buffer* buffer, Modulator *mod) {
+    void Init(Buffer* buffer) {
         _buffer = buffer;
-        _mod = mod;
     }
 
     void SetGateOpen(bool open) {
       if (open && !_is_gate_open) {
         _volume = 1.f;
         _last_playhead = 0;
-        _Activate(0, false);
+        _Activate(0);
         _is_playing = true;
       }
       _is_gate_open = open;
@@ -70,10 +64,6 @@ class Looper {
         _delta = value;
     }
 
-    void SetRandAmount(const float value) {
-      _rand_amount = value;
-    }
-
     void SetLoop(const float loop_start, const float loop_length) {
       _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
       // Quantize loop length to the window slope. Minimum is 2 slopes = 1 window.
@@ -100,11 +90,11 @@ class Looper {
           wrap = true;
         }
 
-        size_t start = w.PlayHead();
+        auto start = w.PlayHead();
         if (wrap) {
           start = _is_reverse ? _win_per_loop * win_slope - 1 : 0;
         }
-        if (_Activate(start, wrap)) {
+        if (_Activate(start)) {
           _win_current = wrap ? 0 : _win_current + 1;
           break;
         }
@@ -131,15 +121,7 @@ class Looper {
     }
 
 private:
-    bool _Activate(float play_head, bool wrap) {
-      if (wrap) {
-        if (_mode == Mode::one_shot) _is_playing = false;
-        if (_rand_amount > 0.02) {
-          auto length = _buffer->Length();
-          _loop_start_offset = length * 0.5 * _rand_amount * _mod->Value();
-          if (_loop_start_offset < 0) _loop_start_offset += _loop_start + length;
-        }
-      }
+    bool _Activate(float play_head) {
       for (auto& w: _wins) {
           if (!w.IsActive()) {
               auto delta = _is_reverse ? -_delta : _delta;
@@ -159,11 +141,9 @@ private:
     static constexpr size_t kMinLoopLength = 2 * win_slope;
 
     Buffer* _buffer;
-    Modulator* _mod;
     std::array<Window<win_slope>, 2> _wins;
 
     float _delta;
-    float _rand_amount;
     float _volume;
     float _release_kof;
     float _last_playhead;
