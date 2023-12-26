@@ -1,7 +1,11 @@
 #pragma once
 
 #include "daisy.h"
+#include "daisy_seed.h"
 #include <array>
+
+using namespace daisy;
+using namespace seed;
 
 namespace synthux {
 namespace simpletouch {
@@ -17,12 +21,12 @@ class Touch {
       _on_release { nullptr }
       {}
 
-    void Init(hw) {
+    void Init(DaisySeed hw) {
       // Uncomment if you want to use i2C4
       // Wire.setSCL(D13);
       // Wire.setSDA(D14);
-
-       Mpr121I2C::Config config;
+      
+      Mpr121I2C::Config config;
       
       int result = _cap.Init(config);
       hw.PrintLine("cap init: %d", result);
@@ -78,33 +82,36 @@ class Touch {
 
 ///////////////////////////////////////////////////////////////
 //////////////////////////// PINS /////////////////////////////
-
-enum class Analog {
-    S30 = A0,
-    S31 = A1,
-    S32 = A2,
-    S33 = A3,
-    S34 = A4,
-    S35 = A5,
-    S36 = A6,
-    S37 = A7
+//Probably can simplify this since Analog and Digital share pins
+class Analog {
+  public:
+    static constexpr Pin S30 = A0;
+    static constexpr Pin S31 =A1;
+    static constexpr Pin S32 =A2;
+    static constexpr Pin S33 =A3;
+    static constexpr Pin S34 =A4;
+    static constexpr Pin S35 =A5;
+    static constexpr Pin S36 =A6;
+    static constexpr Pin S37 =A7;
 };
 
-enum class Digital {
-    S07 = D6,
-    S08 = D7,
-    S09 = D8,
-    S10 = D9,
-    S30 = D15,
-    S31 = D16,
-    S32 = D17,
-    S33 = D18,
-    S34 = D19,
-    S35 = D20
+class Digital {
+  public:
+    static constexpr Pin S07 = D6;
+    static constexpr Pin S08 =D7;
+    static constexpr Pin S09 =D8;
+    static constexpr Pin S10 =D9;
+    static constexpr Pin S30 =D15;
+    static constexpr Pin S31 =D16;
+    static constexpr Pin S32 =D17;
+    static constexpr Pin S33 =D18;
+    static constexpr Pin S34 =D19;
+    static constexpr Pin S35 =D2;
 };
+
 
 template<class AP, class DP>
-class Pin {
+class PinST {
 public:
   static int a(AP pin) {
     return int(pin);
@@ -115,7 +122,7 @@ public:
   }
 };
 
-using DaisyPin = Pin<Analog, Digital>;
+using DaisyPin = PinST<Analog, Digital>;
 
 };
 };
