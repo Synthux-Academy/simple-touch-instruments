@@ -70,7 +70,7 @@ void OnPadTouch(uint16_t pad) {
     latch = !latch;
     if (!latch) {
       //Drop all latched notes except ones being touched
-      for (auto i = 0; i < hold.size(); i++) {
+      for (unsigned i = 0; i < hold.size(); i++) {
         if (hold[i] && !touch.IsTouched(i + kFirstNotePad))  {
           arp.NoteOff(i);
         }
