@@ -1,3 +1,6 @@
+////////////////////////////////////////////////////////////
+// STEREO AUDIO BUFFER /////////////////////////////////////
+
 #pragma once
 
 namespace synthux {
@@ -38,7 +41,7 @@ class Buffer {
     }
 
     void Read(size_t frame, float& out0, float& out1) {
-      frame %= _buffer_length;
+      frame %= _max_loop_length;
       out0 = _buffer[0][frame];
       out1 = _buffer[1][frame];
     }

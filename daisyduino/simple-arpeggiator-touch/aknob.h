@@ -1,4 +1,7 @@
+#include <sys/_stdint.h>
 #pragma once
+#include <stdint.h>
+#include "Arduino.h"
 
 // Derived from DaisyDuino/libDaisy AnalogControl.
 
@@ -8,10 +11,10 @@ template<uint8_t bits = 10>
 class AKnob {
   public:
     AKnob(uint8_t pin,
-          bool  flip = false,
-          bool  invert = false,
           float coeff = 0.2,
-          float quant = 200.f):
+          float quant = 200.f,
+          bool  flip = false,
+          bool  invert = false):
           val_    { 0.0f },
           pin_    { pin },
           coeff_  { coeff },
@@ -19,6 +22,10 @@ class AKnob {
           flip_   { flip },
           invert_ { invert } 
           {};
+
+  void Init() {
+    pinMode(pin_, INPUT);
+  }
 
     float Process() {
       float t = static_cast<float>(analogRead(pin_)) * kFrac;
@@ -38,5 +45,4 @@ class AKnob {
     bool  flip_;
     bool  invert_;
 };
-
 };

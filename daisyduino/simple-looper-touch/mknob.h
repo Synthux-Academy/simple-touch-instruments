@@ -2,9 +2,9 @@
 
 namespace synthux {
 
-class MemKnob {
+class MKnob {
   public:
-    MemKnob(): 
+    MKnob(): 
       _is_active    { false },
       _is_changing  { false },
       _init_value   { 0.f },

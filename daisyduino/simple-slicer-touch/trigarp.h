@@ -1,3 +1,6 @@
+////////////////////////////////////////////////////////////
+// ARPEGGIATED TRIGGER /////////////////////////////////////
+
 #pragma once
 
 namespace synthux {
@@ -19,7 +22,7 @@ namespace synthux {
       _current_idx      { 0 },
       _size             { 0 } 
       {
-        Clear();
+        Reset();
       }
 
     void SetTrigger(uint8_t num, uint8_t vel) {
@@ -114,7 +117,7 @@ namespace synthux {
       _on_trigger(_triggers[trigger_idx].num, _triggers[trigger_idx].vel);
     }
 
-    void Clear() {
+    void Reset() {
       memset(_input_order, 0, sizeof(uint8_t) * trigger_count);
       _triggers[0].num = kSentinel;
       _triggers[0].next = 0;
@@ -125,6 +128,9 @@ namespace synthux {
           _triggers[i].next = kUnlinked;
           _triggers[i].prev = kUnlinked;
       }
+      _played_idx = 0;
+      _bottom_idx = 0;
+      _current_idx = 0; 
     }
 
   private:

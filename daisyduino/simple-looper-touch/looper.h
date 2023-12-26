@@ -1,10 +1,5 @@
-#include "utility/DaisySP/modules/dsp.h"
-#include "WSerial.h"
-#include "mod.h"
 #pragma once
-
 #include "buf.h"
-#include "mod.h"
 #include "win.h"
 #include <array>
 
@@ -16,22 +11,21 @@ class Looper {
     Looper():
     _buffer             { nullptr },
     _delta              { 1.f },
-    _direction          { 1.f },
-    _rand_amount        { 0 },
     _volume             { 1.f },
     _release_kof        { 0.f },
     _loop_start         { 0 },
     _loop_start_offset  { 0 },
-    _loop_length        { 0 },
+    _win_per_loop       { 0 },
+    _win_current        { 0 },
     _last_playhead      { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
+    _is_reverse         { false },
     _mode               { Mode::loop }
     {}
 
-    void Init(Buffer* buffer, Modulator *mod) {
+    void Init(Buffer* buffer) {
         _buffer = buffer;
-        _mod = mod;
     }
 
     void SetGateOpen(bool open) {
@@ -63,26 +57,20 @@ class Looper {
     }
 
     void ToggleDirection() {
-      //_direction = -_direction;
+      _is_reverse = !_is_reverse;
     }
 
     void SetSpeed(const float value) {
         _delta = value;
     }
 
-    void SetRandAmount(const float value) {
-      _rand_amount = value;
-    }
-
     void SetLoop(const float loop_start, const float loop_length) {
       _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
-      
       // Quantize loop length to the window slope. Minimum is 2 slopes = 1 window.
       // This gives 4ms precision (win_slope = 192), which is 250 points on the turn.
-      auto new_length = static_cast<size_t>(loop_length * _buffer->Length());
-      auto norm_length = (new_length / win_slope) * win_slope;
-      if (new_length - norm_length > win_slope / 2) norm_length += win_slope;
-      _loop_length = std::max(2 * win_slope, norm_length);
+      // Speed affects loop length. The higher is the speed the smaller is length.
+      auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
+      _win_per_loop = std::max(static_cast<size_t>(new_length / win_slope), static_cast<size_t>(2));
     }
   
     void Process(float& out0, float& out1) {
@@ -91,8 +79,25 @@ class Looper {
 
       if (!_is_playing) return;
       
+      auto wrap = false;
       for (auto& w: _wins) {
-        if (w.IsHalf()) _Activate(w.PlayHead());
+        if (!w.IsHalf()) continue;
+        if (_win_current >= _win_per_loop - 2) { // we're instersted in the last but one window
+          if (_mode == Mode::one_shot) {
+            _win_current = 0;
+            continue;
+          }
+          wrap = true;
+        }
+
+        auto start = w.PlayHead();
+        if (wrap) {
+          start = _is_reverse ? _win_per_loop * win_slope - 1 : 0;
+        }
+        if (_Activate(start)) {
+          _win_current = wrap ? 0 : _win_current + 1;
+          break;
+        }
       }
 
       if (!_is_gate_open) {
@@ -116,22 +121,15 @@ class Looper {
     }
 
 private:
-    void _Activate(float play_head) {
-      if (_direction > 0 && play_head < _last_playhead || _direction < 0 && play_head > _last_playhead) {
-        if (_mode == Mode::one_shot) _is_playing = false;
-        if (_rand_amount > 0.02) {
-          auto length = _buffer->Length();
-          _loop_start_offset = length * 0.5 * _rand_amount * _mod->Value();
-          if (_loop_start_offset < 0) _loop_start_offset += _loop_start + length;
-        }
-      }
-      _last_playhead = play_head;
+    bool _Activate(float play_head) {
       for (auto& w: _wins) {
           if (!w.IsActive()) {
-              w.Activate(play_head, _delta * _direction, _loop_start + _loop_start_offset, _loop_length);
-              break;
+              auto delta = _is_reverse ? -_delta : _delta;
+              w.Activate(play_head, delta, _loop_start + _loop_start_offset);
+              return true;
           }
       }
+      return false;
     }
 
     enum class Mode {
@@ -143,21 +141,20 @@ private:
     static constexpr size_t kMinLoopLength = 2 * win_slope;
 
     Buffer* _buffer;
-    Modulator* _mod;
     std::array<Window<win_slope>, 2> _wins;
 
     float _delta;
-    float _direction;
-    float _rand_amount;
     float _volume;
     float _release_kof;
     float _last_playhead;
     size_t _loop_start;
     int32_t _loop_start_offset;
-    size_t _loop_length;
+    size_t _win_per_loop;
+    size_t _win_current;
     Mode _mode;
     bool _is_playing;
     bool _is_gate_open;
+    bool _is_reverse;
     
 };
 };

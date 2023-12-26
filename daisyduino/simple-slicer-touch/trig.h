@@ -1,12 +1,10 @@
-#include "WSerial.h"
 #pragma once
 
 namespace synthux {
 
+template<uint32_t ppqn>
 class Trigger {
 public:
-    static constexpr uint32_t kPPQN = 48; // pulses per quarter note
-
     Trigger():
     _swing      { 0 },
     _iterator   { 0 },
@@ -44,8 +42,8 @@ public:
     }
 
 private:
-    static constexpr uint32_t kPPWN = kPPQN * 4; // pulses per whole note
-    static constexpr uint32_t kPP16N = kPPQN / 4; // pulses per 16th note
+    static constexpr uint32_t kPPWN = ppqn * 4; // pulses per whole note
+    static constexpr uint32_t kPP16N = ppqn / 4; // pulses per 16th note
 
     uint32_t _iterator;
     uint32_t _tick_count;

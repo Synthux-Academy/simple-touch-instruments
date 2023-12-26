@@ -9,24 +9,28 @@
 #include "cpattern.h"
 #include "mknob.h"
 #include "trigarp.h"
+#include "clk.h"
 
 ////////////////////////////////////////////////////////////
-///////////////////// KNOBS & SWITCHES /////////////////////
+//////////////// KNOBS, SWITCHES and JACKS /////////////////
 static synthux::AKnob speed_knob(A(S30));
 static synthux::AKnob pattern_knob(A(S32));
 static synthux::AKnob position_knob(A(S33));
-// static const int knob_d = A(S34);
-// static const int knob_e = A(S35);
-
 static synthux::AKnob shape_fader(A(S36));
 static synthux::AKnob pitch_fader(A(S37));
-
 static std::array<synthux::MKnob, 7> position_mem;
 
-// static const int switch_1_a = D(S07);
-// static const int switch_1_b = D(S08);
+static const int reverse_switch = D(S07);
 static const int arp_switch_a = D(S09);
 static const int arp_switch_b = D(S10);
+
+// Comment this if you're not
+// planning using external sync
+#define EXTERNAL_SYNC
+
+#ifdef EXTERNAL_SYNC
+static const int clk_pin = D(S31);
+#endif
 
 ////////////////////////////////////////////////////////////
 ////////////////////////// TOUCH  //////////////////////////
@@ -36,19 +40,21 @@ static constexpr int kLowPad = 3;
 static constexpr int kHighPad = kLowPad + kPadsUsed - 1; 
 static constexpr int kRecordPad = 0;
 
+static constexpr uint32_t kPPQN = 48;
 ///////////////////////////////////////////////////////////////
 ///////////////////////// MODULES /////////////////////////////
 static synthux::Buffer buf;
 static synthux::Generator<kPadsUsed> gen;
 static synthux::CPattern ptn;
-static synthux::Trigger trig;
+static synthux::Trigger<kPPQN> trig;
 static synthux::TrigArp<kPadsUsed> arp;
-static Metro mtr;
+static synthux::Clock<kPPQN> clk;
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////// CALLBACKS ///////////////////////////
 void OnTouch(uint16_t pad) {
   if (pad >= kLowPad && pad <= kHighPad) {
+    if (!clk.IsRunning()) clk.Run();
     arp.SetTrigger(pad - kLowPad, 127);
   }
 }
@@ -56,6 +62,12 @@ void OnTouch(uint16_t pad) {
 void OnRelease(uint16_t pad) {
   if (pad >= kLowPad && pad <= kHighPad) {
     arp.RemoveTrigger(pad - kLowPad);
+    if (!touch.HasTouch() && clk.IsRunning()) {
+      clk.Stop();
+      trig.Reset();
+      ptn.Reset();
+      arp.Reset();
+    }
   }
 }
 
@@ -67,13 +79,11 @@ void AudioCallback(float **in, float **out, size_t size) {
   auto out0 = 0.f;
   auto out1 = 0.f;
 
-  for (size_t i = 0; i < size; i++) {
-    if (mtr.Process() && trig.Tick() && ptn.Tick()) {
-      arp.Tick();
-    }
+  clk.Tick();
 
+  for (size_t i = 0; i < size; i++) {
     if (is_recording) {
-      buf.Write(in[0][i], in[1][i]);
+      buf.Write(in[0][i], in[1][i]); 
       out[0][i] = in[0][i];
       out[1][i] = in[1][i];
       continue;
@@ -88,7 +98,7 @@ void AudioCallback(float **in, float **out, size_t size) {
 
 ///////////////////////////////////////////////////////////////
 // Allocate buffer in SDRAM ////////////////////////////////// 
-static const uint32_t kBufferLengthSec = 5;
+static const uint32_t kBufferLengthSec = 7;
 static const uint32_t kSampleRate = 48000;
 static const size_t kBufferLenghtSamples = kBufferLengthSec * kSampleRate;
 static float DSY_SDRAM_BSS buf0[kBufferLenghtSamples];
@@ -97,15 +107,17 @@ static float* sdram_buf[2] = { buf0, buf1 };
 
 ////////////////////////////////////////////////////////////
 /////////////////// TEMPO 40 - 240BMP //////////////////////
-//Metro F = ppqn * (minBPM + BPMRange * (0...1)) / secPerMin
-static const float kMinBPM = 40;
-static const float kBPMRange = 200;
+//Metro F = ppqn * (minBPM + BPMRange * (0...1)) / secPerMin/Users/vlad/Desktop/clock.h /Users/vlad/Desktop/clock.cpp
 static const float kSecPerMin = 60.f;
 static const float kMinFreq = 24 * 40 / 60.f;
-static const float kFreqRange = synthux::Trigger::kPPQN * kBPMRange / kSecPerMin;
+static const float kFreqRange = kPPQN * synthux::kBPMMin / kSecPerMin;
+
+void OnClockTick() {
+  if (trig.Tick() && ptn.Tick()) arp.Tick();
+}
 
 ///////////////////////////////////////////////////////////////
-//Arpeggiator callbacks ////////.......////////////////////////
+//Arpeggiator callbacks ///////////////////////////////////////
 void OnArpTrig(uint8_t slice_num, uint8_t vel) {
   gen.Activate(slice_num);
 };
@@ -115,9 +127,10 @@ void OnArpTrig(uint8_t slice_num, uint8_t vel) {
 void setup() {
   // SETUP DAISY
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
-  auto sample_rate = DAISY.get_samplerate();
+  auto sample_rate = DAISY.AudioSampleRate();
+  auto buffer_size = DAISY.AudioBlockSize();
 
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   // INIT TOUCH SENSOR
   touch.Init();
@@ -127,13 +140,18 @@ void setup() {
   // INIT SWITCHES
   pinMode(arp_switch_a, INPUT_PULLUP);
   pinMode(arp_switch_b, INPUT_PULLUP);
-  // pinMode(switch_2_a, INPUT_PULLUP);
+  pinMode(reverse_switch, INPUT_PULLUP);
   // pinMode(switch_2_b, INPUT_PULLUP);
 
   buf.Init(sdram_buf, kBufferLenghtSamples);
-  gen.Init(&buf, sample_rate);
+  gen.Init(&buf);
   arp.SetOnTrigger(OnArpTrig);
-  mtr.Init(96, sample_rate); //96Hz = 48ppqn @ 120bpm 
+
+  clk.Init(sample_rate, buffer_size);
+  clk.SetOnTick(OnClockTick);
+  #ifdef EXTERNAL_SYNC
+  pinMode(clk_pin, INPUT);
+  #endif
 
   // BEGIN CALLBACK
   DAISY.begin(AudioCallback);
@@ -142,22 +160,6 @@ void setup() {
 void loop() {
   //PROCESS TOUCH SENSOR
   touch.Process();
-
-  //Position
-  auto position_val = position_knob.Process();
-  for (auto i = 0; i < kPadsUsed; i++) {
-    auto is_active = touch.IsTouched(i + kLowPad);
-    position_mem[i].SetActive(is_active, position_val);
-    if (is_active) gen.SetPosition(i, position_mem[i].Process(position_val));
-  }
-  
-  ptn.SetOnsets(pattern_knob.Process());
-  gen.SetShape(shape_fader.Process());
-
-  // Speed
-  auto speed = speed_knob.Process();
-  auto freq = kMinFreq + kFreqRange * speed;
-  mtr.SetFreq(freq);
 
   //Recording
   auto new_is_recording = touch.IsTouched(0);
@@ -170,6 +172,29 @@ void loop() {
   is_recording = new_is_recording;
   buf.SetRecording(is_recording);
 
+  //Position
+  auto position_val = position_knob.Process();
+  for (auto i = 0; i < kPadsUsed; i++) {
+    auto is_active = touch.IsTouched(i + kLowPad);
+    position_mem[i].SetActive(is_active, position_val);
+    if (is_active) gen.SetPosition(i, position_mem[i].Process(position_val));
+  }
+  
+  //Pattern
+  ptn.SetOnsets(pattern_knob.Process());
+
+  //Envelope
+  gen.SetShape(shape_fader.Process());
+
+  // Tempo
+  auto tempo = speed_knob.Process();
+  clk.SetTempo(tempo);
+
+  //Sync
+  #ifdef EXTERNAL_SYNC
+  clk.Process(!digitalRead(clk_pin));
+  #endif
+
   //Pitch
   auto pitch_val = pitch_fader.Process();
   if (pitch_val < 0.45 || pitch_val > 0.55) {
@@ -178,7 +203,10 @@ void loop() {
   else {
     gen.SetSpeed(0.5);
   }
-  
+
+  //Reverse
+  bool is_reverse = digitalRead(reverse_switch);
+  gen.SetReverse(is_reverse);
 
   //Arp mode
   bool is_forward = !digitalRead(arp_switch_b);
