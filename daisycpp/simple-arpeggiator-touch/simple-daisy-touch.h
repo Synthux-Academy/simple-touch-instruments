@@ -1,7 +1,6 @@
 #pragma once
 
-#include "DaisyDuino.h"
-#include "Adafruit_MPR121.h"
+#include "daisy.h"
 #include <array>
 
 namespace synthux {
@@ -18,17 +17,18 @@ class Touch {
       _on_release { nullptr }
       {}
 
-    void Init() {
+    void Init(hw) {
       // Uncomment if you want to use i2C4
       // Wire.setSCL(D13);
       // Wire.setSDA(D14);
+
+       Mpr121I2C::Config config;
       
-      if (!_cap.begin(0x5A)) {
-        Serial.println("MPR121 not found, check wiring?");
-        while (1) {
-          Serial.println("PLEASE CONNECT MPR121 TO CONTINUE TESTING");
-          delay(200);
-        }
+      int result = _cap.Init(config);
+      hw.PrintLine("cap init: %d", result);
+    
+      if (result != 0) {
+        hw.PrintLine("MPR121 config failed");
       }
     }
 
@@ -53,7 +53,7 @@ class Touch {
         uint16_t pad;
         bool is_touched;
         bool was_touched;
-        auto state = _cap.touched();
+        auto state = _cap.Touched();
         for (uint16_t i = 0; i < 12; i++) {
           pad = 1 << i;
           is_touched = state & pad;
@@ -72,7 +72,7 @@ class Touch {
     void(*_on_touch)(uint16_t pad);
     void(*_on_release)(uint16_t pad);
 
-    Adafruit_MPR121 _cap;
+    Mpr121I2C _cap;
     uint16_t _state;
 };
 
