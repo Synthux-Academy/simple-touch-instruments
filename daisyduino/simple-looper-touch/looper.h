@@ -20,6 +20,7 @@ class Looper {
     _is_playing         { false },
     _is_gate_open       { false },
     _is_reverse         { false },
+    _is_retriggering    { false },
     _mode               { Mode::loop }
     {}
 
@@ -29,10 +30,15 @@ class Looper {
 
     void SetGateOpen(bool open) {
       if (open && !_is_gate_open) {
+        if (!_is_playing) {
+          _Activate(0);
+          _win_current = 0;
+          _is_playing = true;
+        }
+        else {
+          _is_retriggering = true;
+        }
         _volume = 1.f;
-        _win_current = 0;
-        _Activate(0);
-        _is_playing = true;
       }
       _is_gate_open = open;
     }
@@ -97,18 +103,19 @@ class Looper {
         if (!w.IsHalf()) continue;
         if (_win_current >= _win_per_loop - 2) { // we're instersted in the last but one window
           if (_mode == Mode::one_shot) {
-            _win_current = 0;
+            _Stop();
             continue;
           }
           wrap = true;
         }
 
         auto start = w.PlayHead();
-        if (wrap) {
+        if (wrap || _is_retriggering) {
           start = _is_reverse ? _win_per_loop * win_slope - 1 : 0;
         }
         if (_Activate(start)) {
-          _win_current = wrap ? 0 : _win_current + 1;
+          _win_current = wrap || _is_retriggering ? 0 : _win_current + 1;
+          _is_retriggering = false;
           break;
         }
       }
@@ -159,7 +166,7 @@ private:
     static constexpr size_t kMinLoopLength = 2 * win_slope;
 
     Buffer* _buffer;
-    std::array<Window<win_slope>, 2> _wins;
+    std::array<Window<win_slope>, 3> _wins;
 
     float _delta;
     float _volume;
@@ -173,6 +180,7 @@ private:
     bool _is_playing;
     bool _is_gate_open;
     bool _is_reverse;
+    bool _is_retriggering;
     
 };
 };
