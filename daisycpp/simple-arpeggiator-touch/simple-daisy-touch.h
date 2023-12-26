@@ -73,11 +73,10 @@ class Touch {
     }
 
   private:
+    uint16_t _state;
     void(*_on_touch)(uint16_t pad);
     void(*_on_release)(uint16_t pad);
-
     Mpr121I2C _cap;
-    uint16_t _state;
 };
 
 ///////////////////////////////////////////////////////////////
