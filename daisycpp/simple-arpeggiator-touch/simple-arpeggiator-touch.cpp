@@ -1,9 +1,11 @@
 #include "daisy_seed.h"
 #include "daisysp.h"
 
+#include "simple-daisy-touch.h"
+#include "clk.h"
+#include "aknob.h"
 #include "vox.h"
 #include "arp.h"
-#include "term.h"
 #include "scale.h"
 
 using namespace daisy;
