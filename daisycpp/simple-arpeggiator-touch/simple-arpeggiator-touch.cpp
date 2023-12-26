@@ -84,7 +84,7 @@ int main(void)
 
   metro.Init(48, sample_rate); //48Hz = 24ppqn @ 120bpm
 
-  term.Init();
+  term.Init(hw);
   term.SetOnNoteOn(OnTerminalNoteOn);
 	term.SetOnNoteOff(OnTerminalNoteOff);
 	term.SetOnScaleSelect(OnScaleSelect);
@@ -93,7 +93,7 @@ int main(void)
 	arp.SetOnNoteOff(OnArpNoteOff);
 
   //Configure input
-  asPlayedSwitch.Init(S30, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
+  asPlayedSwitch.Init(S30, GPIO::Mode::INPUT);
 
   //Create an ADC configuration
 	AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
@@ -119,15 +119,16 @@ int main(void)
 	////////////////////////// LOOP ///////////////////////////////
 
   while (1) {
+    hw.PrintLine("Loopy");
     float speed = hw.adc.GetFloat(speedKnobb)  / kKnobMax;
 		float freq = kMinFreq + kFreqRange * speed;
-		
+
 		metro.SetFreq(freq); 
-
+    
 		hw.SetLed(term.IsLatched());
-		
-		term.Process();
 
+		term.Process();
+      		
 		float arp_lgt = hw.adc.GetFloat(lengthKnob) / kKnobMax; //duino analogRead
 		float arp_ctr = hw.adc.GetFloat(directionKnob) / kKnobMax; //duino analogRead
 		ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
@@ -137,6 +138,6 @@ int main(void)
 		arp.SetAsPlayed(asPlayedSwitch.Read()); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
-		System::Delay(4);
+    System::Delay(1000);
   }
 }
