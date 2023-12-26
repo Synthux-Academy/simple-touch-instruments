@@ -119,7 +119,6 @@ int main(void)
 	////////////////////////// LOOP ///////////////////////////////
 
   while (1) {
-    hw.PrintLine("Loopy");
     float speed = hw.adc.GetFloat(speedKnobb)  / kKnobMax;
 		float freq = kMinFreq + kFreqRange * speed;
 
@@ -138,6 +137,6 @@ int main(void)
 		arp.SetAsPlayed(asPlayedSwitch.Read()); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
-    System::Delay(1000);
+    System::Delay(4);
   }
 }
