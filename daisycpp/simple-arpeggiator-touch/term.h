@@ -19,11 +19,26 @@ namespace synthux {
           _hold.fill(false);
         }
 
-      void Init() {
+      void Init(DaisySeed hw) {
         // Uncomment if you want to use i2C4
         // Wire.setSCL(D13);
         // Wire.setSDA(D14);
+        _hw = hw;
+        
+        Mpr121I2C::Config config;
+        config.transport_config.dev_addr = 0x5B;
+        hw.PrintLine("cap init: %d", _cap.Init(config));
+      /**
+        if (!_cap.Init(config)) {
+          hw.PrintLine("MPR121 not found, check wiring?");
+          while (1) {
+            hw.PrintLine("PLEASE CONNECT MPR121 TO CONTINUE TESTING");
+            System::Delay(1000);
+          }
+        }
+        */
       }
+      
 
       // Register note on callback
       void SetOnNoteOn(void(*on_note_on)(uint8_t num, uint8_t vel)) {
@@ -97,14 +112,14 @@ namespace synthux {
         _hold.fill(false);
       }
 
+      void(*_on_note_on)(uint8_t num, uint8_t vel);
+      void(*_on_note_off)(uint8_t num);
       void(*_on_scale_select)(uint8_t index);
 
       Mpr121I2C _cap;
       uint16_t _state;
       std::array<bool, kNotesCount> _hold;
       bool _latch;
-
-      void(*_on_note_on)(uint8_t num, uint8_t vel);
-      void(*_on_note_off)(uint8_t num);
+      DaisySeed _hw;
   };
 };
