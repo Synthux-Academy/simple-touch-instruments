@@ -108,14 +108,15 @@ namespace synthux {
         _hold.fill(false);
       }
 
+      uint16_t _state;
+      bool _latch;
+
       void(*_on_note_on)(uint8_t num, uint8_t vel);
       void(*_on_note_off)(uint8_t num);
       void(*_on_scale_select)(uint8_t index);
 
       Mpr121I2C _cap;
-      uint16_t _state;
       std::array<bool, kNotesCount> _hold;
-      bool _latch;
       DaisySeed _hw;
   };
 };

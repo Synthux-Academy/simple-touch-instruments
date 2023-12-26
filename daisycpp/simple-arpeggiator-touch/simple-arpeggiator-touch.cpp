@@ -107,9 +107,7 @@ int main(void)
 
   // Enable Logging, and set up the USB connection.
   hw.StartLog(true);
-
-  // And Print Hello World!
-  hw.PrintLine("Hello World !!!");
+  hw.PrintLine("Config complete !!!");
 
   ///////////////////////////////////////////////////////////////
 	////////////////////////// LOOP ///////////////////////////////
@@ -133,6 +131,7 @@ int main(void)
 		arp.SetAsPlayed(asPlayedSwitch.Read()); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
-    System::Delay(4);
+    System::Delay(400);
+    hw.PrintLine("Loopy");
   }
 }
