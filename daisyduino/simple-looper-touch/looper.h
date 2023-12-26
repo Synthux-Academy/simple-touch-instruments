@@ -30,6 +30,7 @@ class Looper {
     void SetGateOpen(bool open) {
       if (open && !_is_gate_open) {
         _volume = 1.f;
+        _win_current = 0;
         _Activate(0);
         _is_playing = true;
       }
@@ -114,8 +115,8 @@ class Looper {
 
       if (!_is_gate_open) {
         if (_mode == Mode::release) _volume -= _release_kof * _volume;
-        if (_volume <= .01f) {
-          _is_playing = false;
+        if (_volume <= .02f) {
+          _Stop();
           return;
         }
       }
@@ -142,6 +143,11 @@ private:
           }
       }
       return false;
+    }
+
+    void _Stop() {
+      _is_playing = false;
+      for (auto& w: _wins) w.Deactivate();
     }
 
     enum class Mode {
