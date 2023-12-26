@@ -15,6 +15,14 @@ using namespace synthux;
 ////////////////////////////////////////////////////////////
 ////////////////////////// CONTROLS ////////////////////////
 
+enum AdcChannel {
+   switchKnob = 0,
+   speedKnobb,
+   lengthKnob,
+   directionKnob,
+   NUM_ADC_CHANNELS
+};
+
 #define S30 daisy::seed::D15 // SWITCH : ORDERED / AS PLAYED
 #define S31 daisy::seed::A1  // KNOB : SPEED
 #define S32 daisy::seed::A2  // KNOB : LENGTH
@@ -85,10 +93,10 @@ int main(void)
   //Create an ADC configuration
 	const int NUM_ADC_CHANNELS = 4;
 	AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
-	adcConfig[0].InitSingle(S30);
-	adcConfig[1].InitSingle(S31);
-	adcConfig[2].InitSingle(S32);
-	adcConfig[3].InitSingle(S33);
+	adcConfig[switchKnob].InitSingle(S30);
+	adcConfig[speedKnobb].InitSingle(S31);
+	adcConfig[lengthKnob].InitSingle(S32);
+	adcConfig[directionKnob].InitSingle(S33);
   
   //Initialize the adc with the config we just made
   hw.adc.Init(adcConfig, NUM_ADC_CHANNELS);
@@ -96,7 +104,7 @@ int main(void)
 
   //https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html
 	Led led1;
-    led1.Init(hw.GetPin(28), false);
+  led1.Init(hw.GetPin(28), false);
 
 	hw.StartAudio(AudioCallback);
 
@@ -110,7 +118,7 @@ int main(void)
 	////////////////////////// LOOP ///////////////////////////////
 
   while (1) {
-    float speed = hw.adc.GetFloat(0)  / kKnobMax;
+    float speed = hw.adc.GetFloat(speedKnobb)  / kKnobMax;
 		float freq = kMinFreq + kFreqRange * speed;
 		
 		metro.SetFreq(freq); 
@@ -119,13 +127,13 @@ int main(void)
 		
 		term.Process();
 
-		float arp_lgt = hw.adc.GetFloat(2) / kKnobMax; //duino analogRead
-		float arp_ctr = hw.adc.GetFloat(3) / kKnobMax; //duino analogRead
+		float arp_lgt = hw.adc.GetFloat(lengthKnob) / kKnobMax; //duino analogRead
+		float arp_ctr = hw.adc.GetFloat(directionKnob) / kKnobMax; //duino analogRead
 		ArpDirection arp_dir = arp_ctr < .5f ? ArpDirection::fwd : ArpDirection::rev;
 		float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
 		arp.SetDirection(arp_dir);
 		arp.SetRandChance(arp_rnd);
-		arp.SetAsPlayed(hw.adc.GetFloat(0)); //duino digitalRead
+		arp.SetAsPlayed(hw.adc.GetFloat(switchKnob)); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
 		System::Delay(4);
