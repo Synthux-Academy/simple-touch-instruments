@@ -15,9 +15,10 @@ using namespace synthux;
 ////////////////////////////////////////////////////////////
 ////////////////////////// CONTROLS ////////////////////////
 
+GPIO asPlayedSwitch;
+
 enum AdcChannel {
-   switchKnob = 0,
-   speedKnobb,
+   speedKnobb= 0,
    lengthKnob,
    directionKnob,
    NUM_ADC_CHANNELS
@@ -65,6 +66,7 @@ DaisySeed hw;
 
 void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size)
 {
+  //hw.PrintLine("asPlayedSwitch %d", asPlayedSwitch.Read());
   for (size_t i = 0; i < size; i++) {
     if (metro.Process()) arp.Trigger();
 		out[0][i] = out[1][i] = vox.Process();
@@ -90,10 +92,11 @@ int main(void)
 	arp.SetOnNoteOn(OnArpNoteOn);
 	arp.SetOnNoteOff(OnArpNoteOff);
 
+  //Configure input
+  asPlayedSwitch.Init(S30, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
+
   //Create an ADC configuration
-	const int NUM_ADC_CHANNELS = 4;
 	AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
-	adcConfig[switchKnob].InitSingle(S30);
 	adcConfig[speedKnobb].InitSingle(S31);
 	adcConfig[lengthKnob].InitSingle(S32);
 	adcConfig[directionKnob].InitSingle(S33);
@@ -110,7 +113,7 @@ int main(void)
   hw.StartLog(true);
 
   // And Print Hello World!
-  hw.PrintLine("Hello World. You working?? !!!");
+  hw.PrintLine("Hello World !!!");
 
   ///////////////////////////////////////////////////////////////
 	////////////////////////// LOOP ///////////////////////////////
@@ -131,7 +134,7 @@ int main(void)
 		float arp_rnd = arp_ctr < .5f ? 2.f * arp_ctr : 2.f * (1.f - arp_ctr);
 		arp.SetDirection(arp_dir);
 		arp.SetRandChance(arp_rnd);
-		arp.SetAsPlayed(hw.adc.GetFloat(switchKnob)); //duino digitalRead
+		arp.SetAsPlayed(asPlayedSwitch.Read()); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
 		System::Delay(4);
