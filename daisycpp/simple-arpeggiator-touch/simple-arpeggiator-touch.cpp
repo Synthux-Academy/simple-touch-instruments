@@ -131,7 +131,6 @@ int main(void)
 		arp.SetAsPlayed(asPlayedSwitch.Read()); //duino digitalRead
 		arp.SetNoteLength(arp_lgt);
 
-    System::Delay(400);
-    hw.PrintLine("Loopy");
+    System::Delay(4);
   }
 }
