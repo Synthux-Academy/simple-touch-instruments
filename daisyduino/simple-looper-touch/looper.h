@@ -54,12 +54,26 @@ class Looper {
       }
     }
 
-    void ToggleDirection() {
-      _is_reverse = !_is_reverse;
-    }
-
     void SetSpeed(const float value) {
-        _delta = value;
+        if (value > 0.23 && value < 0.27) {
+          _delta = 1.f;
+          _is_reverse = true;
+        }
+        else if (value > 0.48 && value < 0.52) {
+          _delta = 0.f;
+        }
+        else if (value > 0.73 && value < 0.77) {
+          _delta = 1.f;
+          _is_reverse = false;
+        }
+        else if (value < 0.5) {
+          _delta = (0.5f - value) * 4.f;
+          _is_reverse = true;
+        }
+        else {
+          _delta = (value - 0.5) * 4.f;
+          _is_reverse = false;
+        }
     }
 
     void SetLoop(const float loop_start, const float loop_length) {

@@ -75,6 +75,7 @@ void setup() {
   for (auto i = 0; i < kTracksCount; i++) {
     m_length[i].Init(0.3f);
     m_release[i].Init(1.0f);
+    m_speed[i].Init(0.75f);
   }
 
   DAISY.begin(AudioCallback);
@@ -85,11 +86,7 @@ uint8_t track_pads[kTracksCount] = { 3, 5, 7 };
 bool is_reverse_touched = false;
 
 void loop() {
-  auto raw_loop_speed = speed_knob.Process();
-  auto loop_speed = 0.f;
-  if (raw_loop_speed < 0.475f || raw_loop_speed > 0.525f) {
-    loop_speed = fmap(raw_loop_speed, -1.f, 1.f);
-  }
+  auto loop_speed = speed_knob.Process();
   auto loop_start = start_knob.Process();
   auto loop_length = fmap(length_knob.Process(), 0.f, 1.f, Mapping::EXP);
   auto release = release_knob.Process();
@@ -115,13 +112,9 @@ void loop() {
   // Set per-track parameters
   if (t_act_idx < UINT8_MAX) {
     auto& t = tracks[t_act_idx];
-    t.SetSpeed(1.f + m_speed[t_act_idx].Process(loop_speed));
+    t.SetSpeed(m_speed[t_act_idx].Process(loop_speed));
     t.SetLoop(m_start[t_act_idx].Process(loop_start), m_length[t_act_idx].Process(loop_length));
     t.SetRelease(m_release[t_act_idx].Process(release));
-    if (touch.IsTouched(2) && !is_reverse_touched) {
-      t.ToggleDirection();
-    }
-    is_reverse_touched = touch.IsTouched(2);
   }
 
   // Toggle record
