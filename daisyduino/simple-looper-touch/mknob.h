@@ -32,6 +32,10 @@ class MKnob {
     return _value;
   }
 
+  float Value() {
+    return _value;
+  }
+
   private:
     static constexpr float kTreshold = 0.02;
 
