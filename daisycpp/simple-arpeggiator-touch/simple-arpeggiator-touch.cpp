@@ -31,7 +31,7 @@ static const uint16_t kLatchPad = 2;
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
 
 enum AdcChannel {
-   speed_knob = 0, //S30
+   speed_knob = 0, //S30 - actually seems to be S31
    length_knob, //S32
    direction_random_knob, //S33
    NUM_ADC_CHANNELS

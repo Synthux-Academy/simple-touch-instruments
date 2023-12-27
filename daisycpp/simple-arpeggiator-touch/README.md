@@ -39,3 +39,8 @@ and [ADC](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_s
 ```bash
 make clean ; make ; make program-dfu
 ```
+
+## TODO
+
+TODO: The code says S30 should be controlling speed but it looks like S31 is
+TODO: Fix tests in `simple-arpeggiator-touch.cpp`
