@@ -1,4 +1,5 @@
-
+// SYNTHUX ACADEMY /////////////////////////////////////////
+// TRIPLE LOOPER ///////////////////////////////////////////
 #include "simple-daisy-touch.h"
 #include "looper.h"
 #include "aknob.h"
@@ -8,7 +9,8 @@ using namespace synthux;
 
 static const int kTracksCount = 3;
 
-// Setup pins
+////////////////////////////////////////////////////////////
+//////////////// KNOBS, SWITCHES and JACKS /////////////////
 static std::array<AKnob<>, kTracksCount> mix_knobs = { AKnob(A(S32)), AKnob(A(S33)), AKnob(A(S34)) };
 static AKnob speed_knob(A(S30));
 static AKnob release_knob(A(S35));
@@ -25,7 +27,8 @@ static MValue m_pan[kTracksCount];
 
 static simpletouch::Touch touch;
 
-// Allocate buffer in SDRAM 
+////////////////////////////////////////////////////////////
+/////////////////// SDRAM BUFFER /////////////////////////// 
 static const uint32_t kBufferLengthSec = 7;
 static const uint32_t kSampleRate = 48000;
 static const size_t kBufferLenghtSamples = kBufferLengthSec * kSampleRate;
@@ -33,9 +36,13 @@ static float DSY_SDRAM_BSS buf0[kBufferLenghtSamples];
 static float DSY_SDRAM_BSS buf1[kBufferLenghtSamples];
 static float* buf[2] = { buf0, buf1 };
 
+///////////////////////////////////////////////////////////////
+///////////////////////// MODULES /////////////////////////////
 static Buffer buffer;
 static synthux::Looper<> tracks[kTracksCount];
 
+///////////////////////////////////////////////////////////////
+///////////////////// AUDIO CALLBACK //////////////////////////
 float tracks_sum[2];
 float track_out[2];
 float mix_volume[kTracksCount][2];
@@ -62,6 +69,8 @@ void AudioCallback(float **in, float **out, size_t size) {
   }
 }
 
+///////////////////////////////////////////////////////////////
+///////////////////////// SETUP ///////////////////////////////
 void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
@@ -89,6 +98,8 @@ uint8_t t_act_idx = 0;
 uint8_t track_pads[kTracksCount] = { 3, 5, 7 };
 bool is_reverse_touched = false;
 
+///////////////////////////////////////////////////////////////
+///////////////////////// LOOP ////////////////////////////////
 void loop() {
   auto loop_speed = speed_knob.Process();
   auto loop_start = start_knob.Process();
