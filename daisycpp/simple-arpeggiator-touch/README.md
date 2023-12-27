@@ -42,5 +42,5 @@ make clean ; make ; make program-dfu
 
 ## TODO
 
-TODO: The code says S30 should be controlling speed but it looks like S31 is
-TODO: Fix tests in `simple-arpeggiator-touch.cpp`
+* TODO: The code says S30 should be controlling speed but it looks like S31 is
+* TODO: Fix tests in `simple-arpeggiator-touch.cpp`
