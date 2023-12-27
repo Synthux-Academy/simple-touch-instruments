@@ -85,9 +85,9 @@ class Looper {
 
     void SetLoop(const float loop_start, const float loop_length) {
       _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
-      // Quantize loop length to the window slope. Minimum is 2 slopes = 1 window.
-      // This gives 4ms precision (win_slope = 192), which is 250 points on the turn.
-      // Speed affects loop length. The higher is the speed the smaller is length.
+      // Quantize loop length to the half of the window. Minimum length is one window.
+      // This gives 4ms precision (win_slope = 192 @48K), which is 250 points on the knob move.
+      // Speed affects quantized loop length. The higher is the speed the smaller is length.
       auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
       _win_per_loop = std::max(static_cast<size_t>(new_length / win_slope), static_cast<size_t>(2));
     }
