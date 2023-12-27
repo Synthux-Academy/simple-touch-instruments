@@ -2,7 +2,7 @@
 #include "simple-daisy-touch.h"
 #include "looper.h"
 #include "aknob.h"
-#include "mknob.h"
+#include "mvalue.h"
 
 using namespace synthux;
 
@@ -16,12 +16,12 @@ static AKnob release_knob(A(S35));
 static AKnob start_knob(A(S36));
 static AKnob length_knob(A(S37));
 
-static MKnob m_start[kTracksCount];
-static MKnob m_length[kTracksCount];
-static MKnob m_speed[kTracksCount];
-static MKnob m_release[kTracksCount];
-static MKnob m_volume[kTracksCount];
-static MKnob m_pan[kTracksCount];
+static MValue m_start[kTracksCount];
+static MValue m_length[kTracksCount];
+static MValue m_speed[kTracksCount];
+static MValue m_release[kTracksCount];
+static MValue m_volume[kTracksCount];
+static MValue m_pan[kTracksCount];
 
 static simpletouch::Touch touch;
 
