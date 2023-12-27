@@ -31,6 +31,9 @@ and [ADC](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_s
 > **_NOTE:_**  I am not a regular C++ programing so please forgive and correct
 > deviations from best practices. I hacked my way through much of this.
 
+> **_NOTE:_**  I don't think the TEST_KNOBS or TEST_SWITCHES functions are
+> working. I am not sure how to use them to test them out.
+
 ## Build
 
 ```bash
