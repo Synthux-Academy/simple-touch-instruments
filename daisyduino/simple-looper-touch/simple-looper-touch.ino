@@ -9,7 +9,7 @@ using namespace synthux;
 static const int kTracksCount = 3;
 
 // Setup pins
-static std::array<AKnob<>, kTracksCount> volume_knobs = { AKnob(A(S32)), AKnob(A(S33)), AKnob(A(S34)) };
+static std::array<AKnob<>, kTracksCount> mix_knobs = { AKnob(A(S32)), AKnob(A(S33)), AKnob(A(S34)) };
 static AKnob speed_knob(A(S30));
 static AKnob release_knob(A(S35));
 
@@ -20,6 +20,8 @@ static MKnob m_start[kTracksCount];
 static MKnob m_length[kTracksCount];
 static MKnob m_speed[kTracksCount];
 static MKnob m_release[kTracksCount];
+static MKnob m_volume[kTracksCount];
+static MKnob m_pan[kTracksCount];
 
 static simpletouch::Touch touch;
 
@@ -36,7 +38,7 @@ static synthux::Looper<> tracks[kTracksCount];
 
 float tracks_sum[2];
 float track_out[2];
-float mix_volume[kTracksCount];
+float mix_volume[kTracksCount][2];
 void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
     buffer.Write(in[0][i], in[1][i]);
@@ -51,8 +53,8 @@ void AudioCallback(float **in, float **out, size_t size) {
     for (auto i = 0; i < kTracksCount; i++) {
       if (tracks[i].IsPlaying()) { 
         tracks[i].Process(track_out[0], track_out[1]);
-        tracks_sum[0] += track_out[0] * mix_volume[i];
-        tracks_sum[1] += track_out[1] * mix_volume[i];
+        tracks_sum[0] += track_out[0] * mix_volume[i][0];
+        tracks_sum[1] += track_out[1] * mix_volume[i][1];
       }
     }
     out[0][i] = tracks_sum[0];
@@ -64,7 +66,7 @@ void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
 
-  //Serial.begin(9600);
+  Serial.begin(9600);
 
   touch.Init();
 
@@ -76,6 +78,8 @@ void setup() {
     m_length[i].Init(0.3f);
     m_release[i].Init(1.0f);
     m_speed[i].Init(0.75f);
+    m_pan[i].Init(0.5f);
+    m_volume[i].Init(1.f);
   }
 
   DAISY.begin(AudioCallback);
@@ -93,28 +97,41 @@ void loop() {
 
   touch.Process();
 
-  t_act_idx = UINT8_MAX;
   for (auto i = 0; i < kTracksCount; i++) {
+    auto mix = mix_knobs[i].Process();
+
+    // Start track playback
     auto is_on = touch.IsTouched(track_pads[i]);
-    if (is_on) t_act_idx = i;
-    tracks[i].SetGateOpen(is_on);
-    
-    mix_volume[i] = fmap(volume_knobs[i].Process(), 0.f, 1.f, Mapping::EXP);
+    auto& t = tracks[i];
+    t.SetGateOpen(is_on);
 
     // Assign per-track knobs to touched track  
-    auto is_active = (i == t_act_idx);
-    m_start[i].SetActive(is_active, loop_start);
-    m_length[i].SetActive(is_active, loop_length);
-    m_speed[i].SetActive(is_active, loop_speed);
-    m_release[i].SetActive(is_active, release);
-  }
-  
-  // Set per-track parameters
-  if (t_act_idx < UINT8_MAX) {
-    auto& t = tracks[t_act_idx];
-    t.SetSpeed(m_speed[t_act_idx].Process(loop_speed));
-    t.SetLoop(m_start[t_act_idx].Process(loop_start), m_length[t_act_idx].Process(loop_length));
-    t.SetRelease(m_release[t_act_idx].Process(release));
+    m_start[i].SetActive(is_on, loop_start);
+    m_length[i].SetActive(is_on, loop_length);
+    m_speed[i].SetActive(is_on, loop_speed);
+    m_release[i].SetActive(is_on, release);
+    m_pan[i].SetActive(is_on, mix);
+    m_volume[i].SetActive(!is_on, mix);
+
+    // Set per-track parameters
+    if (is_on) {
+      t.SetSpeed(m_speed[i].Process(loop_speed));
+      t.SetLoop(m_start[i].Process(loop_start), m_length[i].Process(loop_length));
+      t.SetRelease(m_release[i].Process(release));
+      m_pan[i].Process(mix);
+    }
+    else {
+      m_volume[i].Process(mix);
+    }
+
+    auto volume = fmap(m_volume[i].Value(), 0.f, 1.f, Mapping::EXP);
+    auto pan = m_pan[i].Value();
+    float pan0 = 1.f;
+    float pan1 = 1.f;  
+    if (pan < 0.47f) pan1 = 2.f * pan;
+    else if (pan > 0.53f) pan0 = 2.f * (1.f - pan);
+    mix_volume[i][0] = volume * pan0;
+    mix_volume[i][1] = volume * pan1;
   }
 
   // Toggle record
