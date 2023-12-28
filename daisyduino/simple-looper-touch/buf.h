@@ -4,6 +4,17 @@ namespace synthux {
 
 class Buffer {
   public:
+    Buffer(): 
+    _buffer_length    { 0 },
+    _max_loop_length  { 0 },
+    _rec_head         { 0 },
+    _play_head        { 0 },
+    _env_slope        { 192 },
+    _rec_env_pos      { 0 },
+    _rec_env_pos_inc  { 0 },
+    _is_full          { false }
+    {}
+  
     void Init(float **buf, size_t length, size_t env_slope = 192) {
       _buffer = buf;
       _buffer_length = length;
@@ -64,12 +75,13 @@ class Buffer {
   private:
     float** _buffer;
     
-    size_t  _buffer_length      { 0 };
-    size_t  _max_loop_length    { 0 };
-    size_t  _rec_head           { 0 };
-    size_t  _env_slope          { 192 };
-    size_t  _rec_env_pos        { 0 };
-    int32_t _rec_env_pos_inc    { 0 };
-    bool _is_full               { false };
+    size_t  _buffer_length;
+    size_t  _max_loop_length;
+    size_t  _rec_head;
+    size_t  _play_head;
+    size_t  _env_slope;
+    size_t  _rec_env_pos;
+    int32_t _rec_env_pos_inc;
+    bool _is_full;
 };
 };

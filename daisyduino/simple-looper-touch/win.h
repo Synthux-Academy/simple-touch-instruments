@@ -31,6 +31,10 @@ public:
 
     bool IsActive() { return _is_active; }
 
+    void Deactivate() {
+      _is_active = false;
+    }
+
     bool IsHalf() {  return _iterator == kHalf;  }
 
     float PlayHead() { return _play_head; }

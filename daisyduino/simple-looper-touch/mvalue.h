@@ -2,9 +2,9 @@
 
 namespace synthux {
 
-class MKnob {
+class MValue {
   public:
-    MKnob(): 
+    MValue(): 
       _is_active    { false },
       _is_changing  { false },
       _init_value   { 0.f },
@@ -29,6 +29,10 @@ class MKnob {
     if (!_is_changing && abs(value - _init_value) < kTreshold) return _value;
     _is_changing = true;
     _value = value;
+    return _value;
+  }
+
+  float Value() {
     return _value;
   }
 

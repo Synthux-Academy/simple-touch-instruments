@@ -17,10 +17,10 @@ class Looper {
     _loop_start_offset  { 0 },
     _win_per_loop       { 0 },
     _win_current        { 0 },
-    _last_playhead      { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
     _is_reverse         { false },
+    _is_retriggering    { false },
     _mode               { Mode::loop }
     {}
 
@@ -30,10 +30,15 @@ class Looper {
 
     void SetGateOpen(bool open) {
       if (open && !_is_gate_open) {
+        if (!_is_playing) {
+          _Activate(0);
+          _win_current = 0;
+          _is_playing = true;
+        }
+        else {
+          _is_retriggering = true;
+        }
         _volume = 1.f;
-        _last_playhead = 0;
-        _Activate(0);
-        _is_playing = true;
       }
       _is_gate_open = open;
     }
@@ -56,19 +61,33 @@ class Looper {
       }
     }
 
-    void ToggleDirection() {
-      _is_reverse = !_is_reverse;
-    }
-
     void SetSpeed(const float value) {
-        _delta = value;
+        if (value > 0.23 && value < 0.27) {
+          _delta = 1.f;
+          _is_reverse = true;
+        }
+        else if (value > 0.48 && value < 0.52) {
+          _delta = 0.f;
+        }
+        else if (value > 0.73 && value < 0.77) {
+          _delta = 1.f;
+          _is_reverse = false;
+        }
+        else if (value < 0.5) {
+          _delta = (0.5f - value) * 4.f;
+          _is_reverse = true;
+        }
+        else {
+          _delta = (value - 0.5) * 4.f;
+          _is_reverse = false;
+        }
     }
 
     void SetLoop(const float loop_start, const float loop_length) {
       _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
-      // Quantize loop length to the window slope. Minimum is 2 slopes = 1 window.
-      // This gives 4ms precision (win_slope = 192), which is 250 points on the turn.
-      // Speed affects loop length. The higher is the speed the smaller is length.
+      // Quantize loop length to the half of the window. Minimum length is one window.
+      // This gives 4ms precision (win_slope = 192 @48K), which is 250 points on the knob move.
+      // Speed affects quantized loop length. The higher is the speed the smaller is length.
       auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
       _win_per_loop = std::max(static_cast<size_t>(new_length / win_slope), static_cast<size_t>(2));
     }
@@ -84,26 +103,27 @@ class Looper {
         if (!w.IsHalf()) continue;
         if (_win_current >= _win_per_loop - 2) { // we're instersted in the last but one window
           if (_mode == Mode::one_shot) {
-            _win_current = 0;
+            _Stop();
             continue;
           }
           wrap = true;
         }
 
         auto start = w.PlayHead();
-        if (wrap) {
+        if (wrap || _is_retriggering) {
           start = _is_reverse ? _win_per_loop * win_slope - 1 : 0;
         }
         if (_Activate(start)) {
-          _win_current = wrap ? 0 : _win_current + 1;
+          _win_current = wrap || _is_retriggering ? 0 : _win_current + 1;
+          _is_retriggering = false;
           break;
         }
       }
 
       if (!_is_gate_open) {
         if (_mode == Mode::release) _volume -= _release_kof * _volume;
-        if (_volume <= .01f) {
-          _is_playing = false;
+        if (_volume <= .02f) {
+          _Stop();
           return;
         }
       }
@@ -132,6 +152,11 @@ private:
       return false;
     }
 
+    void _Stop() {
+      _is_playing = false;
+      for (auto& w: _wins) w.Deactivate();
+    }
+
     enum class Mode {
       one_shot,
       loop,
@@ -141,7 +166,7 @@ private:
     static constexpr size_t kMinLoopLength = 2 * win_slope;
 
     Buffer* _buffer;
-    std::array<Window<win_slope>, 2> _wins;
+    std::array<Window<win_slope>, 3> _wins;
 
     float _delta;
     float _volume;
@@ -155,6 +180,7 @@ private:
     bool _is_playing;
     bool _is_gate_open;
     bool _is_reverse;
+    bool _is_retriggering;
     
 };
 };
