@@ -162,8 +162,9 @@ int main(void) {
   hw.StartAudio(AudioCallback);
 
   // Enable Logging, and set up the USB connection.
-  //Set to true if you want logging and the program to wait for a Serial Monitor
-  hw.StartLog(false); 
+  // Set to true if you want logging, and the program, to wait for a Serial
+  // Monitor
+  hw.StartLog(false);
   hw.PrintLine("Config complete !!!");
 
   ///////////////////////////////////////////////////////////////
