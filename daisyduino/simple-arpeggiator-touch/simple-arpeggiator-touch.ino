@@ -3,6 +3,7 @@
 
 #include "simple-daisy-touch.h"
 #include "clk.h"
+#include "aknob.h"
 #include "vox.h"
 #include "arp.h"
 #include "scale.h"
