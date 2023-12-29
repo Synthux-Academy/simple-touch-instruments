@@ -1,6 +1,6 @@
 // SYNTHUX ACADEMY /////////////////////////////////////////
 // TRIPLE LOOPER ///////////////////////////////////////////
-#include "simple-daisy-touch.h"
+#include "../simple-daisy-touch.h"
 #include "looper.h"
 #include "aknob.h"
 #include "mvalue.h"
