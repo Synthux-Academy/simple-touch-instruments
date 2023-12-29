@@ -8,7 +8,7 @@
 #include "arp.h"
 #include "clk.h"
 #include "scale.h"
-#include "simple-daisy-touch.h"
+#include "../simple-daisy-touch.h"
 #include "vox.h"
 
 using namespace daisy;
