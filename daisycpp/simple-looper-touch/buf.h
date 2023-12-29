@@ -50,7 +50,7 @@ class Buffer {
       out1 = _buffer[1][frame];
     }
 
-    void Write(float& in0, float& in1) {
+    void Write(float in0, float in1) {
       // Calculate iterator position on the record level ramp.
       if ((_rec_env_pos_inc > 0 && _rec_env_pos < _env_slope)
        || (_rec_env_pos_inc < 0 && _rec_env_pos > 0)) {

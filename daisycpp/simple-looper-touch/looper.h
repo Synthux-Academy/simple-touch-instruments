@@ -2,6 +2,9 @@
 #include "buf.h"
 #include "win.h"
 #include <array>
+#include "daisysp.h"
+
+using namespace daisysp;
 
 namespace synthux {
 
