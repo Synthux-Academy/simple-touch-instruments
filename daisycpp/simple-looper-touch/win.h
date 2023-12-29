@@ -6,7 +6,7 @@ namespace synthux {
 template<size_t length>
 constexpr std::array<float, length> Slope() {
     std::array<float, length> slope { 0 };
-    for (int i = 0; i < length; i++) slope[i] = static_cast<float>(i) / static_cast<float>(length - 1);
+    for (unsigned int i = 0; i < length; i++) slope[i] = static_cast<float>(i) / static_cast<float>(length - 1);
     return slope;
 }
 

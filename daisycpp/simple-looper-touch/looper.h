@@ -179,11 +179,11 @@ private:
     int32_t _loop_start_offset;
     size_t _win_per_loop;
     size_t _win_current;
-    Mode _mode;
     bool _is_playing;
     bool _is_gate_open;
     bool _is_reverse;
     bool _is_retriggering;
+    Mode _mode;
     
 };
 };

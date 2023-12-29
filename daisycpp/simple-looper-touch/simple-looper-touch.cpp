@@ -100,11 +100,6 @@ void setup() {
   hw.SetAudioBlockSize(4); // number of samples handled per callback
   hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
 
-  float sample_rate = hw.AudioSampleRate();
-  float buffer_size = hw.AudioBlockSize();
-
-  //Serial.begin(9600);
-
   touch.Init(hw);
 
   buffer.Init(buf, kBufferLenghtSamples);
@@ -125,9 +120,7 @@ void setup() {
   hw.StartLog(false);
   hw.PrintLine("Config complete !!!");
 
-  uint8_t t_act_idx = 0;
   uint8_t track_pads[kTracksCount] = { 3, 5, 7 };
-  bool is_reverse_touched = false;
 
   // Create an ADC configuration
   AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
