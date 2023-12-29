@@ -30,7 +30,7 @@ static const uint16_t kLatchPad = 2;
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
 
 enum AdcChannel {
-  speed_knob = 0,        // S30 - actually seems to be S31
+  speed_knob = 0,        // S30
   length_knob,           // S32
   direction_random_knob, // S33
   NUM_ADC_CHANNELS
@@ -149,9 +149,9 @@ int main(void) {
 
   // Create an ADC configuration
   AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
-  adcConfig[speed_knob].InitSingle(Digital::S31);
-  adcConfig[length_knob].InitSingle(Digital::S32);
-  adcConfig[direction_random_knob].InitSingle(Digital::S33);
+  adcConfig[speed_knob].InitSingle(Analog::S31);
+  adcConfig[length_knob].InitSingle(Analog::S32);
+  adcConfig[direction_random_knob].InitSingle(Analog::S33);
 
   // Initialize the adc with the config we just made
   hw.adc.Init(adcConfig, NUM_ADC_CHANNELS);
