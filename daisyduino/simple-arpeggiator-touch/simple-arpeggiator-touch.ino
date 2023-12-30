@@ -116,10 +116,8 @@ void AudioCallback(float **in, float **out, size_t size) {
 void setup() {  
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   DAISY.SetAudioBlockSize(4);
-  auto sample_rate = DAISY.get_samplerate();
-  auto buffer_size = DAISY.AudioBlockSize();
-
-  Serial.begin(9600);
+  float sample_rate = DAISY.AudioSampleRate();
+  float buffer_size = DAISY.AudioBufferSize();
 
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
