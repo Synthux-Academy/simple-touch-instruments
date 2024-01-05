@@ -168,7 +168,7 @@ void loop() {
   arp.SetAsPlayed(digitalRead(mode_switch));
   arp.SetNoteLength(arp_length);
 
-  auto scale_a_val = static_cast<uint8_t>(!digitalRead(scale_switch_a));
+  auto scale_a_val = static_cast<uint8_t>(digitalRead(scale_switch_a));
   auto scale_b_val = static_cast<uint8_t>(!digitalRead(scale_switch_b));
   scale.SetScaleIndex(scale_a_val + scale_b_val);
 

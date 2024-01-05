@@ -19,12 +19,12 @@ bool Track::Tick() {
         if (++_slot == _pattern.size()) _slot = 0;
         if (_is_clearing) _clear(_slot);
     }
-
     
     // As slot is changing in advance, i.e. (_slot-0.5)
     // and resolution is 2x pattern length, every second 
     // same slot value denotes onset.
-    return (slot == _slot && _pattern[_slot]);
+    auto tick = (slot == _slot && _pattern[_slot]);
+    return tick;
 }
 
 float Track::Sound() {
