@@ -63,6 +63,7 @@ public:
       _tick_count = 0;
       _next_tick = 0;
       _is_odd = false;
+      _odd_count = 0;
     }
 
 private:
