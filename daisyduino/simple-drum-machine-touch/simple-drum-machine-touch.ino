@@ -7,6 +7,7 @@
 #include "clk.h"
 #include "click.h"
 #include "aknob.h"
+#include "onoffon.h"
 #include "multivalue.h"
 
 using namespace synthux;
@@ -22,8 +23,7 @@ static AKnob drum_knobs[kDrumCount] = { bd_knob, sd_knob, hh_knob };
 static AKnob tempo_knob(A(S30));
 static AKnob swing_knob(A(S36));
 
-static int func_switch_a = D(S09);
-static int func_switch_b = D(S10);
+static OnOffOn knob_mode_switch(D(S09), D(S10));
 
 static simpletouch::Touch touch;
 
@@ -201,8 +201,8 @@ void setup() {
   touch.Init();
   touch.SetOnTouch(OnPadTouch);
 
-  pinMode(func_switch_a, INPUT_PULLUP);
-  pinMode(func_switch_b, INPUT_PULLUP);
+  knob_mode_switch.Init();
+  
   pinMode(LED_BUILTIN, OUTPUT);
 
   DAISY.begin(AudioCallback);
@@ -226,17 +226,14 @@ void loop() {
   bd_track.SetClearing(is_clearing && (touch.IsTouched(kBDPadA) || touch.IsTouched(kBDPadB)));
   sd_track.SetClearing(is_clearing && (touch.IsTouched(kSDPadA) || touch.IsTouched(kSDPadB)));
   hh_track.SetClearing(is_clearing && (touch.IsTouched(kHHPadA) || touch.IsTouched(kHHPadB)));
-
-  func_a_val = static_cast<uint8_t>(digitalRead(func_switch_a));
-  func_b_val = static_cast<uint8_t>(!digitalRead(func_switch_b));
-  func = func_a_val + func_b_val; //0 - pan, 1 - timebre, 2 - volume
   
+  auto mode = knob_mode_switch.Value(); //0 - pan, 1 - timbre, 2 - volume
   for (auto i = 0; i < kDrumCount; i++) {
     knob_val = drum_knobs[i].Process();
     auto& val = m_val[i];
-    val.SetActive(func, knob_val);
+    val.SetActive(mode, knob_val);
     val.Process(knob_val);
-    switch (func) {
+    switch (mode) {
     case 1: //timbre
       timbre = fmap(val.Value(1), 0.1, 0.9);
       timbresA[i] = timbre - kTimbreOffset;
