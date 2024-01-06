@@ -23,10 +23,11 @@ class AKnob {
 
   void Init() {
     pinMode(pin_, INPUT);
+    val_ = _read();
   }
 
     float Process() {
-      float t = static_cast<float>(analogRead(pin_)) * kFrac;
+      float t = _read();
       if (flip_) t = 1.f - t;
       if (invert_) t = -t;
       val_ += coeff_ * (t - val_);
@@ -35,6 +36,10 @@ class AKnob {
 
   private:
     static constexpr float kFrac = 1.f / 1023.f;
+
+    float _read() {
+      return static_cast<float>(analogRead(pin_)) * kFrac;
+    }
 
     uint8_t pin_;
     float coeff_; 
