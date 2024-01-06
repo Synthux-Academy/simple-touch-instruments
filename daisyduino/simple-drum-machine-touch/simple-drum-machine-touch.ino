@@ -45,12 +45,11 @@ static const int clck_pin = D(S31);
 static constexpr size_t kPPQN = 48;
 
 static Clock<kPPQN> clck;
-static Trigger<kPPQN, Every::_32th> trig;
+static Trigger<kPPQN, Every::_32th> trigger;
 
 static Track bd_track;
 static Track sd_track;
 static Track hh_track;
-static Track* tracks[kDrumCount] = { &bd_track, &sd_track, &hh_track };
 
 static Click click;
 static SimpleBD bd;
@@ -66,9 +65,7 @@ float mix_volume[kDrumCount][2] = {
   { mix_kof[2], mix_kof[2] } //hh
 };
 
-bool bd_trig = false;
-bool sd_trig = false; 
-bool hh_trig = false;
+bool trig[kDrumCount] = { false, false, false };
 
 bool ck_trig = false;
 size_t click_cnt = 0;
@@ -81,9 +78,9 @@ bool is_clearing = false;
 void OnPadTouch(uint16_t pad) {
   switch (pad) {
     case kPlayStopPad: ToggleClock(); break;
-    case kBDPad: if (!is_clearing) { bd_track.Hit(); bd_trig = true; } break;
-    case kSDPad: if (!is_clearing) { sd_track.Hit(); sd_trig = true; } break;
-    case kHHPad: if (!is_clearing) { hh_track.Hit(); hh_trig = true; } break;
+    case kBDPad: if (!is_clearing) { bd_track.HitStroke(timbres[0]); trig[0] = true; } break;
+    case kSDPad: if (!is_clearing) { sd_track.HitStroke(timbres[1]); trig[1] = true; } break;
+    case kHHPad: if (!is_clearing) { hh_track.HitStroke(timbres[2]); trig[2] = true; } break;
     case kRecordPad: ToggleRecording(); break;
     case kClickPad: ToggleClick(); break;
   };
@@ -95,7 +92,7 @@ void ToggleClock() {
     bd_track.Reset();
     sd_track.Reset();
     hh_track.Reset();
-    trig.Reset();
+    trigger.Reset();
     click.Reset();
     click_cnt = 0;
   }
@@ -126,39 +123,46 @@ void OnClockTick() {
     blink = false;
   }
   
-  if (!trig.Tick()) return;
+  if (!trigger.Tick()) return;
 
-  if (bd_track.Tick()) { bd_trig = true; timbres[0] = bd_track.Sound(); }
-  if (sd_track.Tick()) { sd_trig = true; timbres[1] = sd_track.Sound(); }
-  if (hh_track.Tick()) { hh_trig = true; timbres[2] = hh_track.Sound(); }
+  if (bd_track.Tick()) { trig[0] = true; timbres[0] = bd_track.AutomationValue(); }
+  if (sd_track.Tick()) { trig[1] = true; timbres[1] = sd_track.AutomationValue(); }
+  if (hh_track.Tick()) { trig[2] = true; timbres[2] = hh_track.AutomationValue(); }
 }
 
 float click_out;
 float drum_out[kDrumCount];
 void AudioCallback(float **in, float **out, size_t size) {  
+  //Advance clock
   clck.Tick();
-  if (bd_trig) bd.SetSound(timbres[0]);
-  if (sd_trig) sd.SetSound(timbres[1]);
-  if (hh_trig) hh.SetSound(timbres[2]);
+
+  //Set timbre
+  if (trig[0]) bd.SetSound(timbres[0]);
+  if (trig[1]) sd.SetSound(timbres[1]);
+  if (trig[2]) hh.SetSound(timbres[2]);
   
-  for (auto i = 0; i < size; i++) {  
+  for (auto i = 0; i < size; i++) {
+    // Zero out as there's no guarantee that the buffer
+    // is supplied with zero values.
     out[0][i] = out[1][i] = 0;
-    drum_out[0] = bd.Process(bd_trig);
-    drum_out[1] = sd.Process(sd_trig); 
-    drum_out[2] = hh.Process(hh_trig);
+    
+    //Mix drum tracks
+    drum_out[0] = bd.Process(trig[0]);
+    drum_out[1] = sd.Process(trig[1]); 
+    drum_out[2] = hh.Process(trig[2]);
     for (auto k = 0; k < kDrumCount; k++) {
       out[0][i] += drum_out[k] * mix_volume[k][0];
       out[1][i] += drum_out[k] * mix_volume[k][1];  
+      trig[k] = false;
     }
-    click_out = click.Process(ck_trig) * 0.7;
+    
+    //Mix click
     if (click_on) {
+      click_out = click.Process(ck_trig) * 0.7;
       out[0][i] += click_out;
       out[1][i] += click_out;
+      ck_trig = false;
     }
-    bd_trig = false;
-    sd_trig = false;
-    hh_trig = false;
-    ck_trig = false;
   }
 }
 
@@ -180,8 +184,8 @@ void setup() {
   hh.Init(sample_rate);
 
   for (auto i = 0; i < kDrumCount; i++) {
+    drum_knobs[i].Init();
     m_val[i].Init({ 0.5f, 0.5f, 1.0f }); //{ pan, timbre, volume }
-    tracks[i]->SetSound(0.5f);
   }
 
   click.Init(sample_rate);
@@ -206,7 +210,7 @@ void loop() {
   clck.Process(!digitalRead(clck_pin));
   #endif
 
-  trig.SetSwing(swing_knob.Process());
+  trigger.SetSwing(swing_knob.Process());
 
   touch.Process();
 
@@ -226,7 +230,6 @@ void loop() {
     val.Process(knob_val);
     switch (func) {
     case 1: //timbre
-      tracks[i]->SetSound(val.Value(1));
       timbres[i] = val.Value(1);
       break;
 

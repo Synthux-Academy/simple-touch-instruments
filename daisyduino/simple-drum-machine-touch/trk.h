@@ -33,10 +33,14 @@ public:
         return tick;
     }
 
-    void Hit() {
+    float AutomationValue() {
+      return _automation[_slot];
+    }
+
+    void HitStroke(float param) {
       if (_is_recording) {
         _pattern[_slot] = true;
-        _automation[_slot] = _param;
+        _automation[_slot] = param;
         _last_hit_slot = _slot;
       }
     }
@@ -47,14 +51,6 @@ public:
 
     void SetClearing(bool value) {
       _is_clearing = value;
-    }
-
-    void SetSound(float value) { 
-      _param = value; 
-    }
-
-    float Sound() {
-      return _automation[_slot];
     }
 
     void Reset() {
@@ -74,7 +70,6 @@ private:
 
     std::array<bool, kPatternLength> _pattern;
     std::array<float, kPatternLength> _automation;
-    float _param;
     uint8_t _counter;
     uint8_t _slot;
     uint8_t _last_hit_slot;
