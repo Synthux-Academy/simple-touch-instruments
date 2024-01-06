@@ -5,29 +5,79 @@
 namespace synthux {
 class Track {
 public:
-    Track();
+    Track():
+    _counter        { 0 },
+    _slot           { 0 },
+    _last_hit_slot  { 0xff },
+    _trigger        { nullptr },
+    _is_clearing    { false }
+    {
+      _pattern.fill(0);
+      _automation.fill(0.5);
+    }
     ~Track() {};
 
-    bool Tick();
-    void Hit();
-    void SetRecording(bool value) { _is_recording = value; }
-    void SetClearing(bool value) { _is_clearing = value; };
-    void SetSound(float value) { _snd = value; };
-    float Sound();
-    void Reset();
+    bool Tick() {
+        auto slot = _slot;
+        if (++_counter == kResolution) {
+            _counter = 0;
+            if (++_slot == _pattern.size()) _slot = 0;
+            if (_is_clearing) _clear(_slot);
+        }
+        
+        // As slot is changing in advance, i.e. (_slot-0.5)
+        // and resolution is 2x pattern length, every second 
+        // same slot value denotes onset.
+        auto tick = (slot == _slot && _pattern[_slot] && _slot != _last_hit_slot);
+        _last_hit_slot = 0xff;
+        return tick;
+    }
+
+    void Hit() {
+      if (_is_recording) {
+        _pattern[_slot] = true;
+        _automation[_slot] = _param;
+        _last_hit_slot = _slot;
+      }
+    }
+
+    void SetRecording(bool value) { 
+      _is_recording = value; 
+    }
+
+    void SetClearing(bool value) {
+      _is_clearing = value;
+    }
+
+    void SetSound(float value) { 
+      _param = value; 
+    }
+
+    float Sound() {
+      return _automation[_slot];
+    }
+
+    void Reset() {
+      _slot = 0;
+      _counter = 0;
+    }
 
 private:
-    void _clear(uint8_t);
+    void _clear(uint8_t slot) {
+        _pattern[slot] = false;
+    }
+    
     void(*_trigger)();
 
     static constexpr uint8_t kResolution = 2;
     static constexpr uint8_t kPatternLength = 16;
 
     std::array<bool, kPatternLength> _pattern;
-    std::array<float, kPatternLength> _sound;
-    float _snd;
+    std::array<float, kPatternLength> _automation;
+    float _param;
     uint8_t _counter;
     uint8_t _slot;
+    uint8_t _last_hit_slot;
     bool _is_recording;
     bool _is_clearing;
 };
