@@ -26,13 +26,17 @@ static int func_switch_a = D(S09);
 static int func_switch_b = D(S10);
 
 static simpletouch::Touch touch;
-static const uint16_t kRecordPad = 0;
+
+static const uint16_t kClickPad = 0;
 static const uint16_t kPlayStopPad = 2;
-static const uint16_t kBDPad = 3;
-static const uint16_t kSDPad = 4;
-static const uint16_t kHHPad = 6;
-static const uint16_t kClickPad = 7;
-static const uint16_t kClearingPad = 8;
+static const uint16_t kBDPadA = 3;
+static const uint16_t kBDPadB = 4;
+static const uint16_t kSDPadA = 6;
+static const uint16_t kSDPadB = 7;
+static const uint16_t kHHPadA = 8;
+static const uint16_t kHHPadB = 9;
+static const uint16_t kRecordPad = 10;
+static const uint16_t kClearingPad = 11;
 
 // Comment this if you're not
 // planning using external sync
@@ -56,16 +60,17 @@ static SimpleBD bd;
 static SimpleSD sd;
 static SimpleHH hh;
 
-
+static constexpr float kTimbreOffset = 0.09;
+bool trig[kDrumCount] = { false, false, false };
 float timbres[kDrumCount] = { 0.5f, 0.5f, 0.5f };
+float timbresA[kDrumCount] = { 0.41f, 0.41f, 0.41f };
+float timbresB[kDrumCount] = { 0.59f, 0.59f, 0.59f };
 float mix_kof[kDrumCount] = { 1.0f, 0.4f, 0.5f }; //bd, sd, hh
 float mix_volume[kDrumCount][2] = { 
   { mix_kof[0], mix_kof[0] }, //bd
   { mix_kof[1], mix_kof[1] }, //sd
   { mix_kof[2], mix_kof[2] } //hh
 };
-
-bool trig[kDrumCount] = { false, false, false };
 
 bool ck_trig = false;
 size_t click_cnt = 0;
@@ -78,9 +83,12 @@ bool is_clearing = false;
 void OnPadTouch(uint16_t pad) {
   switch (pad) {
     case kPlayStopPad: ToggleClock(); break;
-    case kBDPad: if (!is_clearing) { bd_track.HitStroke(timbres[0]); trig[0] = true; } break;
-    case kSDPad: if (!is_clearing) { sd_track.HitStroke(timbres[1]); trig[1] = true; } break;
-    case kHHPad: if (!is_clearing) { hh_track.HitStroke(timbres[2]); trig[2] = true; } break;
+    case kBDPadA: if (!is_clearing) { timbres[0] = timbresA[0]; bd_track.HitStroke(timbres[0]); trig[0] = true; } break;
+    case kBDPadB: if (!is_clearing) { timbres[0] = timbresB[0]; bd_track.HitStroke(timbres[0]); trig[0] = true; } break;
+    case kSDPadA: if (!is_clearing) { timbres[1] = timbresA[1]; sd_track.HitStroke(timbres[1]); trig[1] = true; } break;
+    case kSDPadB: if (!is_clearing) { timbres[1] = timbresB[1]; sd_track.HitStroke(timbres[1]); trig[1] = true; } break;
+    case kHHPadA: if (!is_clearing) { timbres[2] = timbresA[2]; hh_track.HitStroke(timbres[2]); trig[2] = true; } break;
+    case kHHPadB: if (!is_clearing) { timbres[2] = timbresB[2]; hh_track.HitStroke(timbres[2]); trig[2] = true; } break;
     case kRecordPad: ToggleRecording(); break;
     case kClickPad: ToggleClick(); break;
   };
@@ -215,9 +223,9 @@ void loop() {
   touch.Process();
 
   is_clearing = touch.IsTouched(kClearingPad);
-  bd_track.SetClearing(is_clearing && touch.IsTouched(kBDPad));
-  sd_track.SetClearing(is_clearing && touch.IsTouched(kSDPad));
-  hh_track.SetClearing(is_clearing && touch.IsTouched(kHHPad));
+  bd_track.SetClearing(is_clearing && (touch.IsTouched(kBDPadA) || touch.IsTouched(kBDPadB)));
+  sd_track.SetClearing(is_clearing && (touch.IsTouched(kSDPadA) || touch.IsTouched(kSDPadB)));
+  hh_track.SetClearing(is_clearing && (touch.IsTouched(kHHPadA) || touch.IsTouched(kHHPadB)));
 
   func_a_val = static_cast<uint8_t>(digitalRead(func_switch_a));
   func_b_val = static_cast<uint8_t>(!digitalRead(func_switch_b));
@@ -230,7 +238,9 @@ void loop() {
     val.Process(knob_val);
     switch (func) {
     case 1: //timbre
-      timbres[i] = val.Value(1);
+      timbre = fmap(val.Value(1), 0.1, 0.9);
+      timbresA[i] = timbre - kTimbreOffset;
+      timbresB[i] = timbre + kTimbreOffset;
       break;
 
     default: //volume or pan
@@ -245,9 +255,7 @@ void loop() {
   }
   }
 
-  if (is_recording) {
-    digitalWrite(LED_BUILTIN, blink);
-  }
+  digitalWrite(LED_BUILTIN, is_recording && blink || is_clearing);
 
   delay(4);
 }
