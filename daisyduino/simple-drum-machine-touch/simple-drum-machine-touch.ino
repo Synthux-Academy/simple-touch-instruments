@@ -1,18 +1,23 @@
+// SYNTHUX ACADEMY /////////////////////////////////////////
+// DRUM MACHINE ////////////////////////////////////////////
 #include "simple-daisy-touch.h"
-#include "trigger.h"
-#include "simplebd.h"
-#include "simplesd.h"
-#include "simplehh.h"
-#include "trk.h"
-#include "clk.h"
-#include "click.h"
 #include "aknob.h"
 #include "onoffon.h"
 #include "multivalue.h"
+#include "syncclock.h"
+#include "trigger.h"
+#include "track.h"
+#include "simplebd.h"
+#include "simplesd.h"
+#include "simplehh.h"
+#include "click.h"
 
 using namespace synthux;
+using namespace simpletouch;
 
-static const int kDrumCount = 3;
+////////////////////////////////////////////////////////////
+////////////// KNOBS, SWITCHES, PADS, JACKS ////////////////
+static const int kDrumCount = 3; //bd, sd, hh
 static const int kParamCount = 3; //pan, volume, timbre
 static std::array<MultiValue<kParamCount>, kDrumCount> m_val;
 static AKnob bd_knob(A(S32));
@@ -25,7 +30,7 @@ static AKnob swing_knob(A(S36));
 
 static OnOffOn knob_mode_switch(D(S09), D(S10));
 
-static simpletouch::Touch touch;
+static Touch touch;
 
 static const uint16_t kClickPad = 0;
 static const uint16_t kPlayStopPad = 2;
@@ -43,12 +48,14 @@ static const uint16_t kClearingPad = 11;
 #define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
-static const int clck_pin = D(S31);
+static const int clock_pin = D(S31);
 #endif
 
+///////////////////////////////////////////////////////////////
+///////////////////////// MODULES /////////////////////////////
 static constexpr size_t kPPQN = 48;
 
-static Clock<kPPQN> clck;
+static SyncClock<kPPQN> clck;
 static Trigger<kPPQN, Every::_32th> trigger;
 
 static Track bd_track;
@@ -60,11 +67,13 @@ static SimpleBD bd;
 static SimpleSD sd;
 static SimpleHH hh;
 
+///////////////////////////////////////////////////////////////
+//////////////////////// VARIABLES ////////////////////////////
 static constexpr float kTimbreOffset = 0.09;
 bool trig[kDrumCount] = { false, false, false };
 float timbres[kDrumCount] = { 0.5f, 0.5f, 0.5f };
-float timbresA[kDrumCount] = { 0.41f, 0.41f, 0.41f };
-float timbresB[kDrumCount] = { 0.59f, 0.59f, 0.59f };
+float timbresA[kDrumCount] = { 0.41f, 0.41f, 0.41f }; //timbres - timbre offset
+float timbresB[kDrumCount] = { 0.59f, 0.59f, 0.59f }; //timbres + timbre offset
 float mix_kof[kDrumCount] = { 1.0f, 0.4f, 0.5f }; //bd, sd, hh
 float mix_volume[kDrumCount][2] = { 
   { mix_kof[0], mix_kof[0] }, //bd
@@ -72,7 +81,7 @@ float mix_volume[kDrumCount][2] = {
   { mix_kof[2], mix_kof[2] } //hh
 };
 
-bool ck_trig = false;
+bool click_trig = false;
 size_t click_cnt = 0;
 bool click_on = false;
 bool blink = false;
@@ -80,6 +89,8 @@ bool blink = false;
 bool is_recording = false;
 bool is_clearing = false;
 
+///////////////////////////////////////////////////////////////
+////////////////////// TOUCH HANDLERS /////////////////////////
 void OnPadTouch(uint16_t pad) {
   switch (pad) {
     case kPlayStopPad: ToggleClock(); break;
@@ -120,11 +131,13 @@ void ToggleClick() {
   click_on = !click_on;
 }
 
+///////////////////////////////////////////////////////////////
+////////////////////// CLOCK HANDLERS /////////////////////////
 auto cnt = 0;
 void OnClockTick() {
   if (click_cnt-- == 0) {
     blink = true;
-    ck_trig = true;
+    click_trig = true;
     click_cnt = kPPQN - 1;
   }
   else {
@@ -138,6 +151,8 @@ void OnClockTick() {
   if (hh_track.Tick()) { trig[2] = true; timbres[2] = hh_track.AutomationValue(); }
 }
 
+///////////////////////////////////////////////////////////////
+///////////////////// AUDIO CALLBACK //////////////////////////
 float click_out;
 float drum_out[kDrumCount];
 void AudioCallback(float **in, float **out, size_t size) {  
@@ -166,25 +181,25 @@ void AudioCallback(float **in, float **out, size_t size) {
     
     //Mix click
     if (click_on) {
-      click_out = click.Process(ck_trig) * 0.7;
+      click_out = click.Process(click_trig) * 0.7;
       out[0][i] += click_out;
       out[1][i] += click_out;
-      ck_trig = false;
+      click_trig = false;
     }
   }
 }
 
+///////////////////////////////////////////////////////////////
+///////////////////////// SETUP ///////////////////////////////
 void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.AudioSampleRate();
   float buffer_size = DAISY.AudioBlockSize();
 
-  Serial.begin(9600);
-
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
   #ifdef EXTERNAL_SYNC
-  pinMode(clck_pin, INPUT);
+  pinMode(clock_pin, INPUT);
   #endif
 
   bd.Init(sample_rate);
@@ -208,6 +223,8 @@ void setup() {
   DAISY.begin(AudioCallback);
 }
 
+///////////////////////////////////////////////////////////////
+///////////////////////// LOOP ////////////////////////////////
 float knob_val, pan, volume, timbre, pan0, pan1, tempo;
 uint8_t func_a_val, func_b_val, func;
 void loop() {
@@ -215,7 +232,7 @@ void loop() {
   clck.SetTempo(tempo);
 
   #ifdef EXTERNAL_SYNC
-  clck.Process(!digitalRead(clck_pin));
+  clck.Process(!digitalRead(clock_pin));
   #endif
 
   trigger.SetSwing(swing_knob.Process());

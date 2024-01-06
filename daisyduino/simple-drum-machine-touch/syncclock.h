@@ -16,9 +16,9 @@ inline static bool fcomp(const float lhs, const float rhs, const int precision =
 }
 
 template<size_t ppqn, size_t ext_ppqn = 4>
-class Clock {
+class SyncClock {
 public:
-    Clock():
+    SyncClock():
       _on_tick             { nullptr },
       _is_running          { false },
       _is_about_to_run     { false },
@@ -36,7 +36,7 @@ public:
       _last_state          { 1 } 
       {}
     
-    ~Clock() = default;
+    ~SyncClock() = default;
 
     void Init(float sample_rate, float buffer_size) {
         auto interval = 1e6 * buffer_size / sample_rate;
