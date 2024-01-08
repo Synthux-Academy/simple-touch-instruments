@@ -84,6 +84,14 @@ void OnPadTouch(uint16_t pad) {
     arp.NoteOn(note_num, 127);
     hold[note_num] = true;
   }
+
+  if (arp.HasNote()) {
+    if (!clck.IsRunning()) clck.Run();
+  }
+  else {
+    clck.Stop();
+    arp.Clear();
+  }
 }
 void OnPadRelease(uint16_t pad) {
   if (pad < kFirstNotePad || pad >= kFirstNotePad + kNotesCount) return;
@@ -117,14 +125,13 @@ void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   DAISY.SetAudioBlockSize(4);
   float sample_rate = DAISY.AudioSampleRate();
-  float buffer_size = DAISY.AudioBufferSize();
+  float buffer_size = DAISY.AudioBlockSize();
 
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
   #ifdef EXTERNAL_SYNC
   pinMode(clk_pin, INPUT);
   #endif
-  clck.Run();
 
   touch.Init();
   touch.SetOnTouch(OnPadTouch);

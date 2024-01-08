@@ -117,7 +117,7 @@ namespace synthux {
 
     void Trigger() {
       // If only a sentinel note is there, i.e. no notes played, do nothing.
-      if (_size <= 1) return;
+      if (!HasNote()) return;
 
       // "Release" last played note
       if (_note_length < ppqn / 4 && _pulse_counter == _note_length && _current_idx > 0) {
@@ -125,7 +125,7 @@ namespace synthux {
       }
       
       // We trigger on every 1/16th
-      if (_pulse_counter++ < ppqn / 4) return;
+      if (++_pulse_counter < ppqn / 4) return;
       _pulse_counter = 0;
 
       // Take next or previous note depending on direction
@@ -150,6 +150,10 @@ namespace synthux {
       _on_note_on(_notes[note_idx].num, _notes[note_idx].vel);
     }
 
+    bool HasNote() {
+      return _size > 1;
+    }
+
     void Clear() {
       memset(_input_order, 0, sizeof(uint8_t) * note_count);
       _notes[0].num = kSentinel;
@@ -161,6 +165,8 @@ namespace synthux {
           _notes[i].next = kUnlinked;
           _notes[i].prev = kUnlinked;
       }
+      _pulse_counter = ppqn / 4;
+      _current_idx = 0;
     }
 
   private:
