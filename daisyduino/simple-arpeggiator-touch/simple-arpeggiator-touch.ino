@@ -24,8 +24,8 @@ static const uint16_t kLatchPad = 2;
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
 
 static AKnob<kAnalogResolution> speed_knob(A(S30));
-static AKnob<kAnalogResolution> length_knob(A(S32));
-static AKnob<kAnalogResolution> direction_random_knob(A(S33));
+static AKnob<kAnalogResolution> length_knob(A(S33));
+static AKnob<kAnalogResolution> direction_random_knob(A(S34));
 
 static const int mode_switch = D(S07);
 static const int scale_switch_a = D(S09);
