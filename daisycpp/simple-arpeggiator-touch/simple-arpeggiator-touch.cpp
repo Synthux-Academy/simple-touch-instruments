@@ -192,7 +192,7 @@ int main(void) {
     arp.SetAsPlayed(mode_switch.Read());
     arp.SetNoteLength(arp_length);
 
-    auto scale_a_val = static_cast<uint8_t>(!scale_switch_a.Read());
+    auto scale_a_val = static_cast<uint8_t>(scale_switch_a.Read());
     auto scale_b_val = static_cast<uint8_t>(!scale_switch_b.Read());
     scale.SetScaleIndex(scale_a_val + scale_b_val);
 
