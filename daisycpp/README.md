@@ -17,15 +17,11 @@ and [ADC](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_s
 See [DaisyWiki](https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment) for setting up your development
 enviornment. 
 
-Make sure the tool chain is in your path and the LIBDAISY_DIR/DAISYSP_DIR
-variables are set.
+Make sure the LIBDAISY_DIR/DAISYSP_DIR variables are set.
 
 ```bash
 export LIBDAISY_DIR=${HOME}/Builds/libDaisy/
 export DAISYSP_DIR=${HOME}/Builds/DaisySP/
-
-PATH=$PATH:/Library/DaisyToolchain/0.2.0/arm/bin/
-PATH=$PATH:/Library/DaisyToolchain/0.2.0/bin/
 ```
 
 For each example directory do the following after 
