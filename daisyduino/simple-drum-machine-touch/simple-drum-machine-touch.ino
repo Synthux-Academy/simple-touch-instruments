@@ -23,7 +23,7 @@ static std::array<MultiValue<kParamCount>, kDrumCount> m_val;
 static AKnob bd_knob(A(S32));
 static AKnob sd_knob(A(S33));
 static AKnob hh_knob(A(S34));
-static AKnob drum_knobs[kDrumCount] = { bd_knob, sd_knob, hh_knob };
+static AKnob<> drum_knobs[kDrumCount] = { bd_knob, sd_knob, hh_knob };
 
 static AKnob tempo_knob(A(S30));
 static AKnob swing_knob(A(S36));
