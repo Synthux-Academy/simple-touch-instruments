@@ -5,3 +5,14 @@
 * This is an excellent intro to the platform! GPIO, serial printing, ADC.
 [libDaisy ref docs](https://electro-smith.github.io/libDaisy/index.html)
 
+## Setup
+
+If you plan on using the libdaisy implementations there are few extra steps
+
+```bash
+git submodule update --init --recursive
+cd libdaisy/lib/DaisySP/
+make
+cd ../libDaisy/
+make
+```
