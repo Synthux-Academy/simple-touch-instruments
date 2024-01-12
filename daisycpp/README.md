@@ -3,9 +3,8 @@
 ## Purpose
 
 The purpose of this effort is to reimplement the
-`daisyduino/simple-*-touch` examples using C++ and no use of the arduino
-libraries. The C++ compile times are faster, in this case, and also promote
-command line build cycles (ex: `make`) without the need for an IDE.
+`daisyduino/simple-*-touch` examples using libDaisy and DaisySP as an
+alternative to Daisyduino.
 
 The most intresting changes can be seen in the use of the libDaisy Mpr121I2C for
 `simple-daisy-touch.h` and using 
