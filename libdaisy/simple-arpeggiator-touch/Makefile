@@ -4,13 +4,9 @@ TARGET = simple-arpeggiator-touch
 # Sources
 CPP_SOURCES = simple-arpeggiator-touch.cpp
 
-ifndef LIBDAISY_DIR
-$(error LIBDAISY_DIR is not set)
-endif
-
-ifndef DAISYSP_DIR
-$(error DAISYSP_DIR is not set)
-endif
+# Library Locations
+LIBDAISY_DIR = ../lib/libDaisy/
+DAISYSP_DIR = ../lib/DaisySP/
 
 
 # Core location, and generic Makefile.
