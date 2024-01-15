@@ -45,13 +45,13 @@ class Buffer {
       return _state != State::idle;
     }
 
-    void Read(size_t frame, float& out0, float& out1) {
+    void Read(const size_t frame, float& out0, float& out1) {
       frame %= _buffer_length;
       out0 = _buffer[0][frame];
       out1 = _buffer[1][frame];
     }
 
-    void Write(float in0, float in1) {
+    void Write(const float in0, const float in1) {
       switch (_state) {
         case State::idle: 
           return;
