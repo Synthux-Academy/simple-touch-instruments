@@ -2,11 +2,19 @@
 #include "vox.h"
 #include "scale.h"
 #include "driver.h"
+#include "aknob.h"
 #include <array>
 
 using namespace synthux;
 using namespace simpletouch;
 
+////////////////////////////////////////////////////////////
+//////////////// KNOBS, SWITCHES and JACKS /////////////////
+static AKnob some_knob(A0);
+
+
+///////////////////////////////////////////////////////////////
+///////////////////////// MODULES /////////////////////////////
 static constexpr uint8_t kVoxCount = 4;
 
 static std::array<Vox, kVoxCount> vox;
@@ -62,6 +70,8 @@ void setup() {
   lfo.SetWaveform(Oscillator::WAVE_TRI);
   lfo.SetAmp(0.1);
 
+  some_knob.Init();
+
   for (auto& v: vox) v.Init(sampleRate);
 
   touch.Init();
@@ -73,6 +83,8 @@ void setup() {
 
 void loop() {
   touch.Process(); 
+
+  auto knob_value = some_knob.Process();
 
   delay(4);
 }

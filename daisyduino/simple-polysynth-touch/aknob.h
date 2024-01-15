@@ -1,18 +1,17 @@
 #pragma once
-#include <stdint.h>
-#include "Arduino.h"
 
 // Derived from DaisyDuino/libDaisy AnalogControl.
 
 namespace synthux {
 
+template<uint8_t bits = 10>
 class AKnob {
   public:
     AKnob(uint8_t pin,
-          float coeff = 0.2,
-          float quant = 200.f,
           bool  flip = false,
-          bool  invert = false):
+          bool  invert = false,
+          float coeff = 0.2,
+          float quant = 200.f):
           val_    { 0.0f },
           pin_    { pin },
           coeff_  { coeff },
@@ -21,13 +20,13 @@ class AKnob {
           invert_ { invert } 
           {};
 
-  void Init() {
-    pinMode(pin_, INPUT);
-    val_ = _read();
-  }
+    void Init() {
+      pinMode(pin_, INPUT);
+      val_ = _read();
+    }
 
     float Process() {
-      float t = _read();
+      float t = static_cast<float>(analogRead(pin_)) * kFrac;
       if (flip_) t = 1.f - t;
       if (invert_) t = -t;
       val_ += coeff_ * (t - val_);
@@ -35,7 +34,7 @@ class AKnob {
     }
 
   private:
-    static constexpr float kFrac = 1.f / 1023.f;
+    static constexpr float kFrac = 1.f / (powf(2.f, bits) - 1.f);
 
     float _read() {
       return static_cast<float>(analogRead(pin_)) * kFrac;
@@ -48,4 +47,5 @@ class AKnob {
     bool  flip_;
     bool  invert_;
 };
+
 };
