@@ -45,7 +45,7 @@ class Buffer {
       return _state != State::idle;
     }
 
-    void Read(const size_t frame, float& out0, float& out1) {
+    void Read(size_t frame, float& out0, float& out1) {
       frame %= _buffer_length;
       out0 = _buffer[0][frame];
       out1 = _buffer[1][frame];
