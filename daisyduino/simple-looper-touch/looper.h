@@ -88,9 +88,9 @@ class Looper {
       _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
       // Quantize loop length to the half of the window. Minimum length is one window.
       // This gives 4ms precision (win_slope = 192 @48K).
-      // Speed affects quantized loop length. The higher is the speed the smaller is the length.
+      // Speed affects quantized loop length. The higher is the speed the shorter is the length.
       auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
-      _win_per_loop = std::max(static_cast<size_t>(new_length / win_slope), static_cast<size_t>(2));
+      _win_per_loop = std::max(static_cast<size_t>(new_length * kSlopeKof), static_cast<size_t>(2));
     }
   
     void Process(float& out0, float& out1) {
@@ -102,7 +102,7 @@ class Looper {
       auto wrap = false;
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
-        if (_win_current >= _win_per_loop - 2) { // we're instersted in the last but one window
+        if (_win_current >= _win_per_loop - 2) { //we're interested in the last but one window
           if (_mode == Mode::one_shot) {
             _Stop();
             continue;
@@ -165,6 +165,7 @@ private:
     };
 
     static constexpr size_t kMinLoopLength = 2 * win_slope;
+    static constexpr float kSlopeKof = 1.f / static_cast<float>(win_slope);
 
     Buffer* _buffer;
     std::array<Window<win_slope>, 3> _wins;
@@ -185,6 +186,7 @@ private:
     
 };
 
+// Calculates slope look-up table.
 template<size_t length>
 constexpr std::array<float, length> Slope() {
     std::array<float, length> slope { 0 };
