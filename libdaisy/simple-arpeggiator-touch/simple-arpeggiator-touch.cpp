@@ -31,8 +31,8 @@ static const uint16_t kLatchPad = 2;
 
 enum AdcChannel {
   speed_knob = 0,        // S30
-  length_knob,           // S32
-  direction_random_knob, // S33
+  length_knob,           // S33
+  direction_random_knob, // S34
   NUM_ADC_CHANNELS
 };
 
@@ -41,7 +41,7 @@ enum AdcChannel {
 //#define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
-static const Pin clk_pin = Digital::S32;
+static const Pin clk_pin = Digital::S31;
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -148,10 +148,14 @@ int main(void) {
   scale_switch_b.Init(Digital::S10, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
 
   // Create an ADC configuration
+  // speed_knob = 0,        // S30
+  //length_knob,           // S33
+  //direction_random_knob, // S34
+
   AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
-  adcConfig[speed_knob].InitSingle(Analog::S31);
-  adcConfig[length_knob].InitSingle(Analog::S32);
-  adcConfig[direction_random_knob].InitSingle(Analog::S33);
+  adcConfig[speed_knob].InitSingle(Analog::S30);
+  adcConfig[length_knob].InitSingle(Analog::S33);
+  adcConfig[direction_random_knob].InitSingle(Analog::S34);
 
   // Initialize the adc with the config we just made
   hw.adc.Init(adcConfig, NUM_ADC_CHANNELS);
