@@ -1,6 +1,6 @@
 #pragma once
+#include <random>
 
-#include "../randomrange.h"
 
 namespace synthux {
 
@@ -127,9 +127,9 @@ public:
 
     // Randomize note
     if (_rand_chance > 0.05 && _rand_chance < 0.95) {
-      auto rnd = static_cast<float>(randomrange(0, 100)) / 100.f;
+      auto rnd = static_cast<float>(_GetRandomNumber(0, 100)) / 100.f;
       if (rnd <= _rand_chance) {
-        note_idx = _input_order[randomrange(0, _size - 2)];
+        note_idx = _input_order[_GetRandomNumber(0, _size - 2)];
       }
     }
 
@@ -214,6 +214,11 @@ private:
 
   void _SetMaxNoteLength() { _max_note_length = ppqn / 4; }
 
+  int _GetRandomNumber(int minValue, int maxValue) {
+      std::uniform_int_distribution<int> distribution(minValue, maxValue);
+      return distribution(_random_generator);
+  }
+
   struct Note {
     uint8_t num;
     uint8_t vel;
@@ -232,6 +237,11 @@ private:
   uint8_t _input_order[note_count];
 
   ArpDirection _direction = ArpDirection::fwd;
+
+  std::random_device randomDevice;
+  unsigned seed = randomDevice();
+  std::default_random_engine _random_generator{seed};
+
   float _rand_chance;
   uint8_t _played_idx;
   bool _as_played;
