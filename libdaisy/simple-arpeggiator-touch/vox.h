@@ -17,7 +17,7 @@ public:
     // LFO SETUP
     _lfo.Init(sample_rate);
 
-    _lfo.SetFreq(randomrange(50, 150) / 10.f);
+    _lfo.SetFreq(_rnd.generate(50, 150) / 10.f);
     _lfo.SetWaveform(Oscillator::WAVE_TRI);
     _lfo.SetAmp(0.005);
 
@@ -55,5 +55,6 @@ private:
   Oscillator _osc;
   Oscillator _lfo;
   Adsr _env;
+  Randomrange _rnd;
 };
 }; // namespace synthux
