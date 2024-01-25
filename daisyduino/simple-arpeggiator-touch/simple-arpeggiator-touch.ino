@@ -100,6 +100,10 @@ void OnPadRelease(uint16_t pad) {
     arp.NoteOff(note_num);
     hold[note_num] = false;
   }
+  if (!arp.HasNote()) {
+    clck.Stop();
+    arp.Clear();
+  }
 }
 void OnArpNoteOn(uint8_t num, uint8_t vel) { 
   vox.NoteOn(scale.FreqAt(num), vel / 127.f); 
