@@ -20,7 +20,7 @@ class Looper {
     _win_current        { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
-    _is_reverse         { false },
+    _direction          { Direction::none },
     _is_retriggering    { false },
     _mode               { Mode::loop }
     {}
@@ -65,22 +65,23 @@ class Looper {
     void SetSpeed(const float value) {
         if (value > 0.23 && value < 0.27) {
           _delta = 1.f;
-          _is_reverse = true;
+          _direction = Direction::rev;
         }
         else if (value > 0.48 && value < 0.52) {
           _delta = 0.f;
+          _direction = Direction::none;
         }
         else if (value > 0.73 && value < 0.77) {
           _delta = 1.f;
-          _is_reverse = false;
+          _direction = Direction::fwd;
         }
         else if (value < 0.5) {
           _delta = (0.5f - value) * 4.f;
-          _is_reverse = true;
+          _direction = Direction::rev;
         }
         else {
           _delta = (value - 0.5) * 4.f;
-          _is_reverse = false;
+          _direction = Direction::fwd;
         }
     }
 
@@ -97,7 +98,7 @@ class Looper {
       out0 = 0.f;
       out1 = 0.f;
 
-      if (!_is_playing) return;
+      if (!_is_playing || _direction == Direction::none) return;
       
       auto wrap = false;
       for (auto& w: _wins) {
@@ -112,7 +113,7 @@ class Looper {
 
         auto start = w.PlayHead();
         if (wrap || _is_retriggering) {
-          start = _is_reverse ? _win_per_loop * win_slope - 1 : 0;
+          start = _direction == Direction::rev ? _win_per_loop * win_slope - 1 : 0;
         }
         if (_Activate(start)) {
           _win_current = wrap || _is_retriggering ? 0 : _win_current + 1;
@@ -145,7 +146,7 @@ private:
     bool _Activate(float play_head) {
       for (auto& w: _wins) {
           if (!w.IsActive()) {
-              auto delta = _is_reverse ? -_delta : _delta;
+              auto delta = _direction == Direction::rev ? -_delta : _delta;
               w.Activate(play_head, delta, _loop_start + _loop_start_offset);
               return true;
           }
@@ -164,6 +165,12 @@ private:
       release
     };
 
+    enum class Direction {
+      none,
+      fwd,
+      rev
+    };
+
     static constexpr size_t kMinLoopLength = 2 * win_slope;
     static constexpr float kSlopeKof = 1.f / static_cast<float>(win_slope);
 
@@ -179,9 +186,10 @@ private:
     size_t _win_per_loop;
     size_t _win_current;
     Mode _mode;
+    Direction _direction;
     bool _is_playing;
+    bool _is_zero_speed;
     bool _is_gate_open;
-    bool _is_reverse;
     bool _is_retriggering;
     
 };
@@ -224,6 +232,7 @@ public:
     float PlayHead() { return _play_head; }
 
     void Process(Buffer* buf, float& out0, float& out1) {
+        // Do linear interpolation as playhead is float
         auto int_ph = static_cast<size_t>(_play_head);
         auto frac_ph = _play_head - int_ph;
         auto next_ph = _delta > 0 ? int_ph + 1 : int_ph - 1;
@@ -238,7 +247,7 @@ public:
         auto att = _Attenuation();
         out0 = (a0 + frac_ph * (b0 - a0)) * att;
         out1 = (a1 + frac_ph * (b1 - a1)) * att;
-
+        
         _play_head += _delta;
         if (_play_head < 0) {
           _play_head += buf->Length();
