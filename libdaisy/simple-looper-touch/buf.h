@@ -5,20 +5,21 @@ namespace synthux {
 class Buffer {
   public:
     Buffer(): 
-    _buffer_length    { 0 },
-    _max_loop_length  { 0 },
-    _rec_head         { 0 },
-    _play_head        { 0 },
-    _env_slope        { 192 },
-    _rec_env_pos      { 0 },
-    _rec_env_pos_inc  { 0 },
-    _is_full          { false }
+    _buffer_length      { 0 },
+    _max_loop_length    { 0 },
+    _rec_head           { 0 },
+    _envelope_position  { 0 },
+    _envelope_slope     { 0 },
+    _envelope_slope_kof { 1 },
+    _state              { State::idle },
+    _is_full            { false }
     {}
   
-    void Init(float **buf, size_t length, size_t env_slope = 192) {
+    void Init(float **buf, size_t length, size_t envelope_slope = 192) {
       _buffer = buf;
       _buffer_length = length;
-      _env_slope = env_slope;
+      _envelope_slope= envelope_slope;
+      _envelope_slope_kof = 1.f / static_cast<float>(envelope_slope - 1);
       // Reset buffer contents to zero
       memset(_buffer[0], 0, sizeof(float) * length);
       memset(_buffer[1], 0, sizeof(float) * length);
@@ -29,19 +30,19 @@ class Buffer {
     }
 
     void SetRecording(bool is_rec_on) {
-        //Initialize recording head position on start
-        if (_rec_env_pos_inc <= 0 && is_rec_on) {
-            _rec_head = 0; 
+      if (_state == State::idle) {
+        if (is_rec_on) {
+          _rec_head = 0; 
+          _state = State::fadein;  
         }
-        // When record switch changes state it effectively
-        // sets ramp to rising/falling, providing a
-        // fade in/out in the beginning and at the end of 
-        // the recorded region.
-        _rec_env_pos_inc = is_rec_on ? 1 : -1;
+      }
+      else if (!is_rec_on) {
+        _state = State::fadeout;
+      }
     }
-  
+
     bool IsRecording() {
-      return _rec_env_pos > 0;
+      return _state != State::idle;
     }
 
     void Read(size_t frame, float& out0, float& out1) {
@@ -50,38 +51,54 @@ class Buffer {
       out1 = _buffer[1][frame];
     }
 
-    void Write(float in0, float in1) {
-      // Calculate iterator position on the record level ramp.
-      if ((_rec_env_pos_inc > 0 && _rec_env_pos < _env_slope)
-       || (_rec_env_pos_inc < 0 && _rec_env_pos > 0)) {
-          _rec_env_pos += _rec_env_pos_inc;
+    void Write(const float in0, const float in1) {
+      switch (_state) {
+        case State::idle: 
+          return;
+
+        case State::fadein:
+          if (++_envelope_position == _envelope_slope) { 
+            _state = State::sustain;
+          };
+          break;
+
+        case State::sustain: 
+          break;
+
+        case State::fadeout:
+          if (--_envelope_position == 0) {
+            _max_loop_length = _is_full ? _buffer_length : _rec_head;
+            _state = State::idle;
+          }
+          break;
       }
-      // If we're in the middle of the ramp - record to the buffer.
-      if (IsRecording()) {
-        // Calculate fade in/out
-        float rec_attenuation = static_cast<float>(_rec_env_pos - 1) / static_cast<float>(_env_slope - 1);
-        _buffer[0][_rec_head] = in0 * rec_attenuation + _buffer[0][_rec_head] * (1.f - rec_attenuation);
-        _buffer[1][_rec_head] = in1 * rec_attenuation + _buffer[1][_rec_head] * (1.f - rec_attenuation);
-        if (++_rec_head == _buffer_length) {
-          _is_full = true;
-          _rec_head = 0;
-        }
-        else {
-          _max_loop_length = _is_full ? _buffer_length : _rec_head;
-        }
+      // Calculate fade in/out attenuation
+      auto rec_attenuation = static_cast<float>(_envelope_position - 1) * _envelope_slope_kof;
+      auto inv_rec_attenuation = 1.f - rec_attenuation;
+      _buffer[0][_rec_head] = in0 * rec_attenuation + _buffer[0][_rec_head] * inv_rec_attenuation;
+      _buffer[1][_rec_head] = in1 * rec_attenuation + _buffer[1][_rec_head] * inv_rec_attenuation;
+      if (++_rec_head == _buffer_length) {
+        _is_full = true;
+        _rec_head = 0;
       }
     }
 
   private:
-    float** _buffer;
+    enum class State {
+      idle,
+      fadein,
+      fadeout,
+      sustain
+    };
     
+    float** _buffer;
     size_t  _buffer_length;
     size_t  _max_loop_length;
     size_t  _rec_head;
-    size_t  _play_head;
-    size_t  _env_slope;
-    size_t  _rec_env_pos;
-    int32_t _rec_env_pos_inc;
-    bool _is_full;
+    size_t  _envelope_position;
+    size_t  _envelope_slope;
+    float   _envelope_slope_kof;
+    State   _state;
+    bool    _is_full;
 };
 };
