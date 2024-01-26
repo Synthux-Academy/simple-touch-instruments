@@ -122,3 +122,50 @@ using DaisyPin = Pin<Analog, Digital>;
 
 #define A(p) synthux::simpletouch::DaisyPin::a(synthux::simpletouch::Analog::p)
 #define D(p) synthux::simpletouch::DaisyPin::d(synthux::simpletouch::Digital::p)
+
+#ifdef TEST_PADS
+void testPads() {
+  for (auto i = 0; i < 12; i++) {
+    if (touch.IsTouched(i)) {
+      Serial.print("IS TOUCHED ");
+      Serial.println(i);
+    }
+  }
+}
+#endif
+
+#ifdef TEST_KNOBS
+void testKnobs() {
+  Serial.print("S30: ");
+  Serial.print(analogRead(knob_a));
+  Serial.print(" S31: ");
+  Serial.print(analogRead(knob_b));
+  Serial.print(" S32: ");
+  Serial.print(analogRead(knob_c));
+  Serial.print(" S33: ");
+  Serial.print(analogRead(knob_d));
+  Serial.print(" S34: ");
+  Serial.print(analogRead(knob_e));
+  Serial.print(" S35: ");
+  Serial.print(analogRead(knob_f));
+  Serial.print(" Fader L: ");
+  Serial.print(analogRead(left_fader));
+  Serial.print(" Fader R: ");
+  Serial.print(analogRead(right_fader));
+  Serial.println("");
+}
+#endif
+
+#ifdef TEST_SWITCHES
+void testSwitches() {
+  Serial.print("S7: ");
+  Serial.print(digitalRead(switch_1_a));
+  Serial.print(" S8: ");
+  Serial.print(digitalRead(switch_1_b));
+  Serial.print(" S9: ");
+  Serial.print(digitalRead(switch_2_a));
+  Serial.print(" S10: ");
+  Serial.print(digitalRead(switch_2_b));
+  Serial.println("");
+}
+#endif

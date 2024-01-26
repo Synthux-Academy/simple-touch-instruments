@@ -24,8 +24,8 @@ static const uint16_t kLatchPad = 2;
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
 
 static AKnob<kAnalogResolution> speed_knob(A(S30));
-static AKnob<kAnalogResolution> length_knob(A(S32));
-static AKnob<kAnalogResolution> direction_random_knob(A(S33));
+static AKnob<kAnalogResolution> length_knob(A(S33));
+static AKnob<kAnalogResolution> direction_random_knob(A(S34));
 
 static const int mode_switch = D(S07);
 static const int scale_switch_a = D(S09);
@@ -84,6 +84,14 @@ void OnPadTouch(uint16_t pad) {
     arp.NoteOn(note_num, 127);
     hold[note_num] = true;
   }
+
+  if (arp.HasNote()) {
+    if (!clck.IsRunning()) clck.Run();
+  }
+  else {
+    clck.Stop();
+    arp.Clear();
+  }
 }
 void OnPadRelease(uint16_t pad) {
   if (pad < kFirstNotePad || pad >= kFirstNotePad + kNotesCount) return;
@@ -91,6 +99,10 @@ void OnPadRelease(uint16_t pad) {
   if (!latch) { 
     arp.NoteOff(note_num);
     hold[note_num] = false;
+  }
+  if (!arp.HasNote()) {
+    clck.Stop();
+    arp.Clear();
   }
 }
 void OnArpNoteOn(uint8_t num, uint8_t vel) { 
@@ -116,17 +128,14 @@ void AudioCallback(float **in, float **out, size_t size) {
 void setup() {  
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   DAISY.SetAudioBlockSize(4);
-  auto sample_rate = DAISY.get_samplerate();
-  auto buffer_size = DAISY.AudioBlockSize();
-
-  Serial.begin(9600);
+  float sample_rate = DAISY.AudioSampleRate();
+  float buffer_size = DAISY.AudioBlockSize();
 
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
   #ifdef EXTERNAL_SYNC
   pinMode(clk_pin, INPUT);
   #endif
-  clck.Run();
 
   touch.Init();
   touch.SetOnTouch(OnPadTouch);
@@ -170,7 +179,7 @@ void loop() {
   arp.SetAsPlayed(digitalRead(mode_switch));
   arp.SetNoteLength(arp_length);
 
-  auto scale_a_val = static_cast<uint8_t>(!digitalRead(scale_switch_a));
+  auto scale_a_val = static_cast<uint8_t>(digitalRead(scale_switch_a));
   auto scale_b_val = static_cast<uint8_t>(!digitalRead(scale_switch_b));
   scale.SetScaleIndex(scale_a_val + scale_b_val);
 
