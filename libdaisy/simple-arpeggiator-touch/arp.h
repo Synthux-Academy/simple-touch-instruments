@@ -131,7 +131,7 @@ namespace synthux {
       _pulse_counter = 0;
 
       // Take next or previous note depending on direction
-      uint8_t note_idx = _NextNoteIdx();
+      uint8_t note_idx;
       switch (_direction) {
         case ArpDirection::fwd: note_idx = _NextNoteIdx(); break;
         case ArpDirection::rev: note_idx = _PrevNoteIdx(); break;
