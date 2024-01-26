@@ -47,6 +47,7 @@ static const Pin clk_pin = Digital::S31;
 ////////////////////////////////////////////////////////////
 ///////////////////// MODULES //////////////////////////////
 
+DaisySeed hw;
 static Scale scale;
 static simpletouch::Touch touch;
 static Arp<kNotesCount, kPPQN> arp;
@@ -89,6 +90,13 @@ void OnPadTouch(uint16_t pad) {
     arp.NoteOn(note_num, 127);
     hold[note_num] = true;
   }
+  if (arp.HasNote()) {
+    if (!clck.IsRunning()) clck.Run();
+  }
+  else {
+    clck.Stop();
+    arp.Clear();
+  }
 }
 void OnPadRelease(uint16_t pad) {
   if (pad < kFirstNotePad || pad >= kFirstNotePad + kNotesCount)
@@ -97,6 +105,10 @@ void OnPadRelease(uint16_t pad) {
   if (!latch) {
     arp.NoteOff(note_num);
     hold[note_num] = false;
+  }
+  if (!arp.HasNote()) {
+    clck.Stop();
+    arp.Clear();
   }
 }
 void OnArpNoteOn(uint8_t num, uint8_t vel) {
@@ -116,7 +128,6 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
 }
 
 int main(void) {
-  DaisySeed hw;
   hw.Init();
   hw.SetAudioBlockSize(4); // number of samples handled per callback
   hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
@@ -130,7 +141,6 @@ int main(void) {
   GPIO clk_input;
   clk_input.Init(clk_pin, GPIO::Mode::INPUT);
 #endif
-  clck.Run();
 
   touch.Init(hw);
   touch.SetOnTouch(OnPadTouch);
