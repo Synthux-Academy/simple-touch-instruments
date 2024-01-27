@@ -2,6 +2,9 @@
 #include "buf.h"
 #include <array>
 
+#include "daisysp.h"
+using namespace daisysp;
+
 namespace synthux {
 
 template<size_t win_slope> class Window;
