@@ -194,6 +194,6 @@ int main(void) {
     auto scale_b_val = static_cast<uint8_t>(!scale_switch_b.Read());
     scale.SetScaleIndex(scale_a_val + scale_b_val);
 
-    System::Delay(4);
+    hw.DelayMs(4);
   }
 }
