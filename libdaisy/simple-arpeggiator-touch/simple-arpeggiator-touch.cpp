@@ -33,12 +33,15 @@ static const int speed_knob = AdcChannel::S30;
 static const int length_knob = AdcChannel::S33;
 static const int direction_random_knob = AdcChannel::S34;
 
+GPIO mode_switch, scale_switch_a, scale_switch_b;
+
 // Comment this if you're not
 // planning using external sync
 #define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
 static const Pin clk_pin = Digital::S31;
+GPIO clk_input;
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -135,7 +138,6 @@ int main(void) {
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
 #ifdef EXTERNAL_SYNC
-  GPIO clk_input;
   clk_input.Init(clk_pin, GPIO::Mode::INPUT);
 #endif
 
@@ -148,8 +150,7 @@ int main(void) {
 
   vox.Init(sample_rate);
 
-  // Configure input
-  GPIO mode_switch, scale_switch_a, scale_switch_b;
+  // Configure switch input
   mode_switch.Init(Digital::S07, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
   scale_switch_a.Init(Digital::S09, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
   scale_switch_b.Init(Digital::S10, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
