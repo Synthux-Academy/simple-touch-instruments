@@ -29,12 +29,9 @@ static const uint16_t kLatchPad = 2;
 ////////////////////////////////////////////////////////////
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
 
-enum AdcChannel {
-  speed_knob = 0,        // S30
-  length_knob,           // S33
-  direction_random_knob, // S34
-  NUM_ADC_CHANNELS
-};
+static const int speed_knob = AdcChannel::S30;
+static const int length_knob = AdcChannel::S33;
+static const int direction_random_knob = AdcChannel::S34;
 
 // Comment this if you're not
 // planning using external sync
@@ -157,20 +154,6 @@ int main(void) {
   scale_switch_a.Init(Digital::S09, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
   scale_switch_b.Init(Digital::S10, GPIO::Mode::INPUT, GPIO::Pull::PULLUP);
 
-  // Create an ADC configuration
-  // speed_knob = 0,        // S30
-  //length_knob,           // S33
-  //direction_random_knob, // S34
-
-  AdcChannelConfig adcConfig[NUM_ADC_CHANNELS];
-  adcConfig[speed_knob].InitSingle(Analog::S30);
-  adcConfig[length_knob].InitSingle(Analog::S33);
-  adcConfig[direction_random_knob].InitSingle(Analog::S34);
-
-  // Initialize the adc with the config we just made
-  hw.adc.Init(adcConfig, NUM_ADC_CHANNELS);
-  hw.adc.Start();
-
   hw.SetLed(false);
 
   hw.StartAudio(AudioCallback);
@@ -185,7 +168,7 @@ int main(void) {
   ////////////////////////// LOOP ///////////////////////////////
 
   while (1) {
-    auto tempo = hw.adc.GetFloat(speed_knob);
+    auto tempo = touch.GetAdcValue(speed_knob);
     clck.SetTempo(tempo);
 #ifdef EXTERNAL_SYNC
     clck.Process(!clk_input.Read());
@@ -195,8 +178,8 @@ int main(void) {
 
     touch.Process();
 
-    auto arp_length = hw.adc.GetFloat(length_knob);
-    auto arp_rand_dir = hw.adc.GetFloat(direction_random_knob);
+    auto arp_length = touch.GetAdcValue(length_knob);
+    auto arp_rand_dir = touch.GetAdcValue(direction_random_knob);
     auto arp_direction =
         arp_rand_dir < .5f ? ArpDirection::fwd : ArpDirection::rev;
     auto arp_random =

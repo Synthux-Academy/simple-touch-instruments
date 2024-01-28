@@ -12,10 +12,23 @@ namespace simpletouch {
 
 ///////////////////////////////////////////////////////////////
 //////////////////////// TOUCH SENSOR /////////////////////////
-
 class Touch {
+    enum AdcChannel {
+    S30 = 0,
+    S31,
+    S32,
+    S33,
+    S34,
+    S35,
+    S36,
+    S37,
+    ADC_LAST
+  };
+
+
 public:
   Touch() : _state{0}, _on_touch{nullptr}, _on_release{nullptr} {}
+
 
   void Init(DaisySeed hw) {
     // Uncomment if you want to use i2C4
@@ -29,6 +42,28 @@ public:
     if (result != 0) {
       _hw.PrintLine("MPR121 config failed");
     }
+
+    /** ADC Init */
+    AdcChannelConfig adc_config[ADC_LAST];
+    /** Order of pins to match enum expectations */
+    dsy_gpio_pin adc_pins[] = {
+      A0,
+      A1,
+      A2,
+      A3,
+      A4,
+      A5,
+      A6,
+      A7,
+    };
+
+    for(int i = 0; i < ADC_LAST; i++)
+    {
+        adc_config[i].InitSingle(adc_pins[i]);
+    }
+    _hw.adc.Init(adc_config, ADC_LAST);
+    _hw.adc.Start();
+
   }
 
   // Register note on callback
@@ -59,6 +94,8 @@ public:
     }
     _state = state;
   }
+
+  float GetAdcValue(int idx) { return _hw.adc.GetFloat(idx); }
 
 private:
   uint16_t _state;
@@ -94,6 +131,18 @@ static constexpr Pin S33 = D18;
 static constexpr Pin S34 = D19;
 static constexpr Pin S35 = D2;
 }; // namespace Digital
+
+enum AdcChannel {
+    S30 = 0,
+    S31,
+    S32,
+    S33,
+    S34,
+    S35,
+    S36,
+    S37,
+    ADC_LAST
+  };
 
 template <class AP, class DP> class PinST {
 public:
