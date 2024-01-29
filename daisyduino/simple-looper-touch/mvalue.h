@@ -26,6 +26,7 @@ class MValue {
   }
 
   float Process(float value) {
+    if (!_is_active) return _value;
     if (!_is_changing && abs(value - _init_value) < kTreshold) return _value;
     _is_changing = true;
     _value = value;
