@@ -27,7 +27,7 @@ public:
     return _drv.Process(_osc.Process() + _noise.Process() * _noise_kof);
   }
 
-  void SetSound(float value) {
+  void SetTone(float value) {
     _base_freq = 80.f + 420.f * value;
     _noise_kof = (1 - value);
     _env.SetTime(ADSR_SEG_RELEASE, .005f + (.1f * value));

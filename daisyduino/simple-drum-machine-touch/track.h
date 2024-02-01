@@ -37,10 +37,10 @@ public:
       return _automation[_slot];
     }
 
-    void HitStroke(float param) {
+    void HitStroke(float automation_value) {
       if (_is_recording) {
         _pattern[_slot] = true;
-        _automation[_slot] = param;
+        _automation[_slot] = automation_value;
         _last_hit_slot = _slot;
       }
     }

@@ -15,7 +15,7 @@ namespace synthux {
         return _hh.Process(gate);
       }
 
-      void SetSound(float value) {
+      void SetTone(float value) {
         _hh.SetDecay(0.5 + 0.5 * value);
         _hh.SetTone(0.5 + 0.5 * (1 - value));
         _hh.SetNoisiness(0.3 + 0.5 * (1 - value));
