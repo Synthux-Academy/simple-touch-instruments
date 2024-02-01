@@ -3,7 +3,7 @@
 #include "simple-daisy-touch.h"
 #include "aknob.h"
 #include "onoffon.h"
-#include "multivalue.h"
+#include "mvalue.h"
 #include "syncclock.h"
 #include "trigger.h"
 #include "track.h"
@@ -14,16 +14,33 @@
 
 using namespace synthux;
 using namespace simpletouch;
+using namespace std;
 
 ////////////////////////////////////////////////////////////
 ////////////// KNOBS, SWITCHES, PADS, JACKS ////////////////
-static const int kDrumCount = 3; //bd, sd, hh
-static const int kParamCount = 3; //pan, volume, timbre
-static std::array<MultiValue<kParamCount>, kDrumCount> m_val;
+enum Drum {
+  BD = 0,
+  SD,
+  HH,
+  kDrumCount
+};
+
+enum Param {
+  Pan = 0,
+  Timbre,
+  Volume,
+  kParamCount
+};
+
 static AKnob bd_knob(A(S32));
-static AKnob sd_knob(A(S33));
-static AKnob hh_knob(A(S34));
-static AKnob<> drum_knobs[kDrumCount] = { bd_knob, sd_knob, hh_knob };
+static AKnob sd_knob(A(S34));
+static AKnob hh_knob(A(S33));
+static array<AKnob<>, kDrumCount> drum_knobs = { bd_knob, sd_knob, hh_knob };
+
+static array<MValue, kParamCount> bd_val;
+static array<MValue, kParamCount> sd_val;
+static array<MValue, kParamCount> hh_val;
+static array<array<MValue, kParamCount>, kDrumCount> m_val = { bd_val, sd_val, hh_val };
 
 static AKnob tempo_knob(A(S30));
 static AKnob swing_knob(A(S36));
@@ -76,9 +93,9 @@ float timbresA[kDrumCount] = { 0.41f, 0.41f, 0.41f }; //timbres - timbre offset
 float timbresB[kDrumCount] = { 0.59f, 0.59f, 0.59f }; //timbres + timbre offset
 float mix_kof[kDrumCount] = { 1.0f, 0.4f, 0.5f }; //bd, sd, hh
 float mix_volume[kDrumCount][2] = { 
-  { mix_kof[0], mix_kof[0] }, //bd
-  { mix_kof[1], mix_kof[1] }, //sd
-  { mix_kof[2], mix_kof[2] } //hh
+  { mix_kof[BD], mix_kof[BD] },
+  { mix_kof[SD], mix_kof[SD] },
+  { mix_kof[HH], mix_kof[HH] }
 };
 
 bool click_trig = false;
@@ -94,12 +111,12 @@ bool is_clearing = false;
 void OnPadTouch(uint16_t pad) {
   switch (pad) {
     case kPlayStopPad: ToggleClock(); break;
-    case kBDPadA: if (!is_clearing) { timbres[0] = timbresA[0]; bd_track.HitStroke(timbres[0]); trig[0] = true; } break;
-    case kBDPadB: if (!is_clearing) { timbres[0] = timbresB[0]; bd_track.HitStroke(timbres[0]); trig[0] = true; } break;
-    case kSDPadA: if (!is_clearing) { timbres[1] = timbresA[1]; sd_track.HitStroke(timbres[1]); trig[1] = true; } break;
-    case kSDPadB: if (!is_clearing) { timbres[1] = timbresB[1]; sd_track.HitStroke(timbres[1]); trig[1] = true; } break;
-    case kHHPadA: if (!is_clearing) { timbres[2] = timbresA[2]; hh_track.HitStroke(timbres[2]); trig[2] = true; } break;
-    case kHHPadB: if (!is_clearing) { timbres[2] = timbresB[2]; hh_track.HitStroke(timbres[2]); trig[2] = true; } break;
+    case kBDPadA: if (!is_clearing) { timbres[BD] = timbresA[BD]; bd_track.HitStroke(timbres[BD]); trig[BD] = true; } break;
+    case kBDPadB: if (!is_clearing) { timbres[BD] = timbresB[BD]; bd_track.HitStroke(timbres[BD]); trig[BD] = true; } break;
+    case kSDPadA: if (!is_clearing) { timbres[SD] = timbresA[SD]; sd_track.HitStroke(timbres[SD]); trig[SD] = true; } break;
+    case kSDPadB: if (!is_clearing) { timbres[SD] = timbresB[SD]; sd_track.HitStroke(timbres[SD]); trig[SD] = true; } break;
+    case kHHPadA: if (!is_clearing) { timbres[HH] = timbresA[HH]; hh_track.HitStroke(timbres[HH]); trig[HH] = true; } break;
+    case kHHPadB: if (!is_clearing) { timbres[HH] = timbresB[HH]; hh_track.HitStroke(timbres[HH]); trig[HH] = true; } break;
     case kRecordPad: ToggleRecording(); break;
     case kClickPad: ToggleClick(); break;
   };
@@ -146,9 +163,9 @@ void OnClockTick() {
   
   if (!trigger.Tick()) return;
 
-  if (bd_track.Tick()) { trig[0] = true; timbres[0] = bd_track.AutomationValue(); }
-  if (sd_track.Tick()) { trig[1] = true; timbres[1] = sd_track.AutomationValue(); }
-  if (hh_track.Tick()) { trig[2] = true; timbres[2] = hh_track.AutomationValue(); }
+  if (bd_track.Tick()) { trig[BD] = true; timbres[BD] = bd_track.AutomationValue(); }
+  if (sd_track.Tick()) { trig[SD] = true; timbres[SD] = sd_track.AutomationValue(); }
+  if (hh_track.Tick()) { trig[HH] = true; timbres[HH] = hh_track.AutomationValue(); }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -160,9 +177,9 @@ void AudioCallback(float **in, float **out, size_t size) {
   clck.Tick();
 
   //Set timbre
-  if (trig[0]) bd.SetSound(timbres[0]);
-  if (trig[1]) sd.SetSound(timbres[1]);
-  if (trig[2]) hh.SetSound(timbres[2]);
+  if (trig[BD]) bd.SetSound(timbres[BD]);
+  if (trig[SD]) sd.SetSound(timbres[SD]);
+  if (trig[HH]) hh.SetSound(timbres[HH]);
   
   for (auto i = 0; i < size; i++) {
     // Zero out as there's no guarantee that the buffer
@@ -170,9 +187,9 @@ void AudioCallback(float **in, float **out, size_t size) {
     out[0][i] = out[1][i] = 0;
     
     //Mix drum tracks
-    drum_out[0] = bd.Process(trig[0]);
-    drum_out[1] = sd.Process(trig[1]); 
-    drum_out[2] = hh.Process(trig[2]);
+    drum_out[BD] = bd.Process(trig[BD]);
+    drum_out[SD] = sd.Process(trig[SD]); 
+    drum_out[HH] = hh.Process(trig[HH]);
     for (auto k = 0; k < kDrumCount; k++) {
       out[0][i] += drum_out[k] * mix_volume[k][0];
       out[1][i] += drum_out[k] * mix_volume[k][1];  
@@ -208,7 +225,9 @@ void setup() {
 
   for (auto i = 0; i < kDrumCount; i++) {
     drum_knobs[i].Init();
-    m_val[i].Init({ 0.5f, 0.5f, 1.0f }); //{ pan, timbre, volume }
+    m_val[i][Pan].Init(0.5f);
+    m_val[i][Timbre].Init(0.5f);
+    m_val[i][Volume].Init(1.0f);
   }
 
   click.Init(sample_rate);
@@ -244,22 +263,23 @@ void loop() {
   sd_track.SetClearing(is_clearing && (touch.IsTouched(kSDPadA) || touch.IsTouched(kSDPadB)));
   hh_track.SetClearing(is_clearing && (touch.IsTouched(kHHPadA) || touch.IsTouched(kHHPadB)));
   
-  auto mode = knob_mode_switch.Value(); //0 - pan, 1 - timbre, 2 - volume
+  auto mode = knob_mode_switch.Value(); //0 -> Pan, 1 -> Timbre, 2 -> Volume
   for (auto i = 0; i < kDrumCount; i++) {
     knob_val = drum_knobs[i].Process();
     auto& val = m_val[i];
-    val.SetActive(mode, knob_val);
-    val.Process(knob_val);
+    val[Pan].SetActive(mode == Pan, knob_val);
+    val[Timbre].SetActive(mode == Timbre, knob_val);
+    val[Volume].SetActive(mode == Volume, knob_val);
     switch (mode) {
-    case 1: //timbre
-      timbre = fmap(val.Value(1), 0.1, 0.9);
+    case Timbre: //timbre
+      timbre = fmap(val[Timbre].Process(knob_val), 0.1, 0.9);
       timbresA[i] = timbre - kTimbreOffset;
       timbresB[i] = timbre + kTimbreOffset;
       break;
 
-    default: //volume or pan
-      volume = fmap(val.Value(2), 0.f, 1.f, Mapping::EXP) * mix_kof[i];
-      pan = val.Value(0);
+    default: //Volume or Pan
+      volume = fmap(val[Volume].Process(knob_val), 0.f, 1.f, Mapping::EXP) * mix_kof[i];
+      pan = val[Pan].Process(knob_val);
       pan0 = 1.f;
       pan1 = 1.f;  
       if (pan < 0.47f) pan1 = 2.f * pan;
