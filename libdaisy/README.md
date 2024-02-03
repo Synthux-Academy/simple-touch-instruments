@@ -11,6 +11,21 @@ The most intresting changes can be seen in the use of the libDaisy Mpr121I2C for
 [GPIO](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a1___getting-_started-_g_p_i_o.html)
 and [ADC](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_started-_a_d_cs.html) for the digital and analog arduino reads respectively.
 
+* This is an excellent intro to the platform! GPIO, serial printing, ADC.
+[libDaisy ref docs](https://electro-smith.github.io/libDaisy/index.html)
+
+## Additional libdaisy setup
+
+If you plan on using the libdaisy implementations there are few extra steps
+
+```bash
+git submodule update --init --recursive
+cd libdaisy/lib/DaisySP/
+make
+cd ../libDaisy/
+make
+```
+
 ## Build
 
 See [DaisyWiki](https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment) for setting up your development
