@@ -6,7 +6,6 @@
 
 #include "../simple-daisy-touch.h"
 #include "looper.h"
-//#include "aknob.h"
 #include "mvalue.h"
 
 using namespace daisy;
@@ -83,7 +82,7 @@ void AudioCallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out,
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////// SETUP ///////////////////////////////
-void setup() {
+int main(void) {
   hw.Init();
   hw.SetAudioBlockSize(4); // number of samples handled per callback
   hw.SetAudioSampleRate(SaiHandle::Config::SampleRate::SAI_48KHZ);
