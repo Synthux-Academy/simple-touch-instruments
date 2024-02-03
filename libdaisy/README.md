@@ -14,14 +14,7 @@ and [ADC](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_s
 ## Build
 
 See [DaisyWiki](https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment) for setting up your development
-enviornment. 
-
-Make sure the LIBDAISY_DIR/DAISYSP_DIR variables are set.
-
-```bash
-export LIBDAISY_DIR=${HOME}/Builds/libDaisy/
-export DAISYSP_DIR=${HOME}/Builds/DaisySP/
-```
+enviornment.
 
 For each example directory do the following after 
 [Flashing](https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#4-Run-the-Blink-Example)

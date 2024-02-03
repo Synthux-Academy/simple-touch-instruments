@@ -9,3 +9,13 @@ Derived from bleep tools work <https://github.com/Synthux-Academy/simple-example
 ## Description
 
 Implementation of `simple-looper-touch` using libDaisy and DaisySP
+
+## Build
+
+For each example directory do the following after 
+[Flashing](https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#4-Run-the-Blink-Example)
+the Daisy via USB.
+
+```bash
+make clean ; make ; make program-dfu
+```
