@@ -180,20 +180,20 @@ private:
     Buffer* _buffer;
     std::array<Window<win_slope>, 3> _wins;
 
+    float _last_playhead;
+    bool _is_zero_speed;
     float _delta;
     float _volume;
     float _release_kof;
-    float _last_playhead;
     size_t _loop_start;
     int32_t _loop_start_offset;
     size_t _win_per_loop;
     size_t _win_current;
-    Mode _mode;
-    Direction _direction;
     bool _is_playing;
-    bool _is_zero_speed;
     bool _is_gate_open;
+    Direction _direction;
     bool _is_retriggering;
+    Mode _mode;
     
 };
 
@@ -201,7 +201,7 @@ private:
 template<size_t length>
 constexpr std::array<float, length> Slope() {
     std::array<float, length> slope { 0 };
-    for (int i = 0; i < length; i++) slope[i] = static_cast<float>(i) / static_cast<float>(length - 1);
+    for (unsigned int i = 0; i < length; i++) slope[i] = static_cast<float>(i) / static_cast<float>(length - 1);
     return slope;
 }
 
