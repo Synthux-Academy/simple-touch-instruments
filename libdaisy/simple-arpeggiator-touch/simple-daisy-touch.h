@@ -10,6 +10,31 @@ using namespace seed;
 namespace synthux {
 namespace simpletouch {
 
+enum AdcChannel {
+  S30 = 0,
+  S31,
+  S32,
+  S33,
+  S34,
+  S35,
+  S36,
+  S37,
+  ADC_LAST
+};
+
+namespace Digital {
+static constexpr Pin S07 = D6;
+static constexpr Pin S08 = D7;
+static constexpr Pin S09 = D8;
+static constexpr Pin S10 = D9;
+static constexpr Pin S30 = D15;
+static constexpr Pin S31 = D16;
+static constexpr Pin S32 = D17;
+static constexpr Pin S33 = D18;
+static constexpr Pin S34 = D19;
+static constexpr Pin S35 = D2;
+}; // namespace Digital
+
 ///////////////////////////////////////////////////////////////
 //////////////////////// TOUCH SENSOR /////////////////////////
 class Touch {
@@ -17,17 +42,6 @@ class Touch {
 public:
   Touch() : _state{0}, _on_touch{nullptr}, _on_release{nullptr} {}
 
-  enum AdcChannel {
-    S30 = 0,
-    S31,
-    S32,
-    S33,
-    S34,
-    S35,
-    S36,
-    S37,
-    ADC_LAST
-  };
 
   void Init(DaisySeed hw) {
     // Uncomment if you want to use i2C4
@@ -104,41 +118,6 @@ private:
   DaisySeed _hw;
 };
 
-///////////////////////////////////////////////////////////////
-//////////////////////////// PINS /////////////////////////////
-// Probably can simplify this since Analog and Digital share pins
-namespace Analog {
-static constexpr Pin S30 = A0;
-static constexpr Pin S31 = A1;
-static constexpr Pin S32 = A2;
-static constexpr Pin S33 = A3;
-static constexpr Pin S34 = A4;
-static constexpr Pin S35 = A5;
-static constexpr Pin S36 = A6;
-static constexpr Pin S37 = A7;
-}; // namespace Analog
-
-namespace Digital {
-static constexpr Pin S07 = D6;
-static constexpr Pin S08 = D7;
-static constexpr Pin S09 = D8;
-static constexpr Pin S10 = D9;
-static constexpr Pin S30 = D15;
-static constexpr Pin S31 = D16;
-static constexpr Pin S32 = D17;
-static constexpr Pin S33 = D18;
-static constexpr Pin S34 = D19;
-static constexpr Pin S35 = D2;
-}; // namespace Digital
-
-template <class AP, class DP> class PinST {
-public:
-  static int a(AP pin) { return int(pin); }
-
-  static int d(DP pin) { return int(pin); }
-};
-
-// using DaisyPin = PinST<Analog, Digital>;
 
 }; // namespace simpletouch
 }; // namespace synthux

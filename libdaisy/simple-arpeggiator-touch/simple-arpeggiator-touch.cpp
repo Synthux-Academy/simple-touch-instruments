@@ -29,9 +29,9 @@ static const uint16_t kLatchPad = 2;
 ////////////////////////////////////////////////////////////
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
 
-static const int speed_knob = Touch::AdcChannel::S30;
-static const int length_knob = Touch::AdcChannel::S33;
-static const int direction_random_knob = Touch::AdcChannel::S34;
+static const int speed_knob = AdcChannel::S30;
+static const int length_knob = AdcChannel::S33;
+static const int direction_random_knob = AdcChannel::S34;
 
 GPIO mode_switch, scale_switch_a, scale_switch_b;
 
