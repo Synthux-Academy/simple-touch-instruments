@@ -7,6 +7,8 @@
 using namespace daisy;
 using namespace seed;
 
+using namespace daisy;
+
 namespace synthux {
 namespace simpletouch {
 
