@@ -13,7 +13,11 @@ namespace simpletouch {
 ///////////////////////////////////////////////////////////////
 //////////////////////// TOUCH SENSOR /////////////////////////
 class Touch {
-    enum AdcChannel {
+
+public:
+  Touch() : _state{0}, _on_touch{nullptr}, _on_release{nullptr} {}
+
+  enum AdcChannel {
     S30 = 0,
     S31,
     S32,
@@ -24,11 +28,6 @@ class Touch {
     S37,
     ADC_LAST
   };
-
-
-public:
-  Touch() : _state{0}, _on_touch{nullptr}, _on_release{nullptr} {}
-
 
   void Init(DaisySeed hw) {
     // Uncomment if you want to use i2C4
@@ -131,18 +130,6 @@ static constexpr Pin S33 = D18;
 static constexpr Pin S34 = D19;
 static constexpr Pin S35 = D2;
 }; // namespace Digital
-
-enum AdcChannel {
-    S30 = 0,
-    S31,
-    S32,
-    S33,
-    S34,
-    S35,
-    S36,
-    S37,
-    ADC_LAST
-  };
 
 template <class AP, class DP> class PinST {
 public:
