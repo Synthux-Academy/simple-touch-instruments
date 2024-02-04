@@ -5,8 +5,8 @@
 
 namespace synthux {
 
-static constexpr float kBPMMin = 40;
-static constexpr float kBPMRange = 200;
+static constexpr float kBPMMin = 40.f;
+static constexpr float kBPMRange = 200.f;
 
 inline static bool fcomp(const float lhs, const float rhs, const int precision = 2) {
     auto digits = precision * 10;
@@ -140,7 +140,7 @@ private:
     _tr_time - internal resolution (ppqn) multiplied by interrupt interval.
     */
     void emit_ticks() {
-        uint32_t nticks = 0;
+        size_t nticks = 0;
 
         //If we generated more internal ticks per extrnal tick as expected,
         //we don't advance internal "timeline", but only accumulate _tempo_ticks
@@ -185,7 +185,7 @@ private:
 
         //Advance timeline
         if (_on_tick != nullptr) {
-          for (uint32_t i = 0; i < nticks; i++) _on_tick();
+          for (size_t i = 0; i < nticks; i++) _on_tick();
         }
     }
     
@@ -198,8 +198,8 @@ private:
         _resync = false;
     }
     
-    uint32_t tempo_mks(const float tempo) {
-        return static_cast<uint32_t>(60.f * 1e6 / tempo);
+    size_t tempo_mks(const float tempo) {
+        return static_cast<size_t>(60.f * 1e6 / tempo);
     }
 
     void(*_on_tick)();
@@ -207,18 +207,18 @@ private:
     bool _is_running;
     bool _is_about_to_run;
 
-    uint32_t _tr_time;
-    uint32_t _ticks_per_clock;
-    uint32_t _ticks;
-    uint32_t _fticks;
-    uint32_t _ticks_at_last_clock;
-    uint32_t _tempo_ticks;
+    size_t _tr_time;
+    size_t _ticks_per_clock;
+    size_t _ticks;
+    size_t _fticks;
+    size_t _ticks_at_last_clock;
+    size_t _tempo_ticks;
     bool _hold;
     bool _resync;
 
     float _manual_tempo;
     float _raw_manual_tempo;
-    uint32_t _tempo_mks;
+    size_t _tempo_mks;
 
     int _last_state;
 };

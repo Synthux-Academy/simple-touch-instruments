@@ -59,20 +59,20 @@ public:
     }
 
 private:
-    void _clear(uint8_t slot) {
+    void _clear(uint32_t slot) {
         _pattern[slot] = false;
     }
     
     void(*_trigger)();
 
-    static constexpr uint8_t kResolution = 2;
-    static constexpr uint8_t kPatternLength = 16;
+    static constexpr uint32_t kResolution = 2;
+    static constexpr uint32_t kPatternLength = 16;
 
     std::array<bool, kPatternLength> _pattern;
     std::array<float, kPatternLength> _automation;
-    uint8_t _counter;
-    uint8_t _slot;
-    uint8_t _last_hit_slot;
+    uint32_t _counter;
+    uint32_t _slot;
+    uint32_t _last_hit_slot;
     bool _is_recording;
     bool _is_clearing;
 };

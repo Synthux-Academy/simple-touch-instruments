@@ -82,7 +82,7 @@ static const int clock_pin = D(S31);
 static constexpr size_t kPPQN = 48;
 
 static SyncClock<kPPQN> clck;
-static Trigger<kPPQN, Every::_32th> trigger;
+static Trigger trigger(kPPQN, Every::_32th);
 
 static Track bd_track;
 static Track sd_track;
