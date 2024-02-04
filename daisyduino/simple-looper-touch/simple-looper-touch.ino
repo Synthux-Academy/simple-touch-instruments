@@ -75,8 +75,6 @@ void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
 
-  Serial.begin(9600);
-
   touch.Init();
 
   buffer.Init(buf, kBufferLenghtSamples);
