@@ -15,7 +15,6 @@ class Looper {
     _volume             { 1.f },
     _release_kof        { 0.f },
     _loop_start         { 0 },
-    _loop_start_offset  { 0 },
     _win_per_loop       { 0 },
     _win_current        { 0 },
     _is_playing         { false },
@@ -147,7 +146,7 @@ private:
       for (auto& w: _wins) {
           if (!w.IsActive()) {
               auto delta = _direction == Direction::rev ? -_delta : _delta;
-              w.Activate(play_head, delta, _loop_start + _loop_start_offset);
+              w.Activate(play_head, delta, _loop_start);
               return true;
           }
       }
@@ -182,7 +181,6 @@ private:
     float _release_kof;
     float _last_playhead;
     size_t _loop_start;
-    int32_t _loop_start_offset;
     size_t _win_per_loop;
     size_t _win_current;
     Mode _mode;
