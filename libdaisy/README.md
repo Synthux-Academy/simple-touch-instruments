@@ -16,7 +16,7 @@ and [ADC](https://electro-smith.github.io/libDaisy/md_doc_2md_2__a4___getting-_s
 
 ## Additional libdaisy setup
 
-If you plan on using the libdaisy implementations there are few extra steps
+Install the DaisySP submodules
 
 ```bash
 git submodule update --init --recursive
