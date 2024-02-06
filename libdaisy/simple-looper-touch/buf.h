@@ -19,7 +19,7 @@ class Buffer {
       _buffer = buf;
       _buffer_length = length;
       _envelope_slope= envelope_slope;
-      _envelope_slope_kof = 1.f / static_cast<float>(envelope_slope - 1);
+      _envelope_slope_kof = 1.f / static_cast<float>(envelope_slope);
       // Reset buffer contents to zero
       memset(_buffer[0], 0, sizeof(float) * length);
       memset(_buffer[1], 0, sizeof(float) * length);
@@ -73,7 +73,7 @@ class Buffer {
           break;
       }
       // Calculate fade in/out attenuation
-      auto rec_attenuation = static_cast<float>(_envelope_position - 1) * _envelope_slope_kof;
+      auto rec_attenuation = static_cast<float>(_envelope_position) * _envelope_slope_kof;
       auto inv_rec_attenuation = 1.f - rec_attenuation;
       _buffer[0][_rec_head] = in0 * rec_attenuation + _buffer[0][_rec_head] * inv_rec_attenuation;
       _buffer[1][_rec_head] = in1 * rec_attenuation + _buffer[1][_rec_head] * inv_rec_attenuation;
