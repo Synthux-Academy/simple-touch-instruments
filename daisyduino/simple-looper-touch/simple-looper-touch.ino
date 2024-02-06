@@ -29,7 +29,7 @@ static simpletouch::Touch touch;
 
 ////////////////////////////////////////////////////////////
 /////////////////// SDRAM BUFFER /////////////////////////// 
-static const uint32_t kBufferLengthSec = 7;
+static const uint32_t kBufferLengthSec = 15;
 static const uint32_t kSampleRate = 48000;
 static const size_t kBufferLenghtSamples = kBufferLengthSec * kSampleRate;
 static float DSY_SDRAM_BSS buf0[kBufferLenghtSamples];
@@ -74,8 +74,6 @@ void AudioCallback(float **in, float **out, size_t size) {
 void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
-
-  Serial.begin(9600);
 
   touch.Init();
 

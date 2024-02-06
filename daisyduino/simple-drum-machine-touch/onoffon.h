@@ -1,3 +1,4 @@
+#include <sys/_stdint.h>
 #pragma once;
 
 namespace synthux {
@@ -15,9 +16,9 @@ public:
     pinMode(_pin_b, INPUT_PULLUP);
   };
 
-  uint8_t Value() const {
-    auto a_val = static_cast<uint8_t>(digitalRead(_pin_a));
-    auto b_val = static_cast<uint8_t>(!digitalRead(_pin_b));
+  uint32_t Value() const {
+    auto a_val = static_cast<uint32_t>(digitalRead(_pin_a));
+    auto b_val = static_cast<uint32_t>(!digitalRead(_pin_b));
     return a_val + b_val;
   }
 

@@ -42,7 +42,7 @@ public:
     return _osc.Process() + _noise.Process() * _noise_level;
   }
 
-  void SetSound(float value) {
+  void SetTone(float value) {
     _noise_level = 0.07f * (1 - value);
     _base_freq = 40.f + 20.f * (1 - value);
     _amp_env.SetTime(ADSR_SEG_RELEASE, .005f + (.1f * value));
