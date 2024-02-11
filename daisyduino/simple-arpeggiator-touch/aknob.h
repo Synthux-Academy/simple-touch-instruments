@@ -1,7 +1,4 @@
-#include <sys/_stdint.h>
 #pragma once
-#include <stdint.h>
-#include "Arduino.h"
 
 // Derived from DaisyDuino/libDaisy AnalogControl.
 
