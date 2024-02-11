@@ -18,19 +18,29 @@ public:
     ~Track() {};
 
     bool Tick() {
+        // Remember current slot
         auto slot = _slot;
-        if (++_counter == kResolution) {
+        // The slot is adwanced every two ticks, 
+        // and one tick before actual onset position.
+        if (++_counter == 2) {
             _counter = 0;
+            // Advance and wrap the current slot.
             if (++_slot == _pattern.size()) _slot = 0;
+            // Clear slot if in clearing mode.
             if (_is_clearing) _clear(_slot);
         }
         
-        // As slot is changing in advance, i.e. (_slot-0.5)
-        // and resolution is 2x pattern length, every second 
-        // same slot value denotes onset.
-        auto tick = (slot == _slot && _pattern[_slot] && _slot != _last_hit_slot);
+        // If the slot was not advanced 
+        // it means we're at the onset possion,
+        // and if this position is not empty
+        // in the pattern array - the drum should be triggered.
+        // A check against _last_hit_slot is 
+        // to prevent double triggering during recording.
+        auto should_trigger = (slot == _slot && _pattern[_slot] && _slot != _last_hit_slot);
+        // Reset last hit slot.
         _last_hit_slot = 0xff;
-        return tick;
+        
+        return should_trigger;
     }
 
     float AutomationValue() {
@@ -65,7 +75,7 @@ private:
     
     void(*_trigger)();
 
-    static constexpr uint32_t kResolution = 2;
+    static constexpr uint32_t kTicksPerSlot = 2;
     static constexpr uint32_t kPatternLength = 16;
 
     std::array<bool, kPatternLength> _pattern;
