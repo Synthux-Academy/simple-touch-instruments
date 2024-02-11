@@ -14,7 +14,6 @@ public:
     _env.SetTime(ADSR_SEG_RELEASE, .03);
     _osc.Init(sample_rate);
     _osc.SetWaveform(Oscillator::WAVE_TRI);
-    _osc.SetFreq(_base_freq);
     _drv.SetDrive(0.5);
   }
 
@@ -27,8 +26,8 @@ public:
   }
 
   void SetTone(float value) {
-    _base_freq = 80.f + 420.f * value;
     _noise_kof = (1 - value);
+    _osc.SetFreq(100.f + 50.f * value);
     _env.SetTime(ADSR_SEG_RELEASE, .005f + (.1f * value));
     if (value > 0.5) _drv.SetDrive(0.05 + 0.55 * value);
   }
@@ -38,7 +37,6 @@ private:
   WhiteNoise _noise;
   Oscillator _osc;
   Overdrive _drv;
-  float _base_freq = 100.f;
   float _noise_kof = 1.0;
 };
 
