@@ -1,4 +1,5 @@
 #pragma once;
+
 #include "DaisyDuino.h"
 
 namespace synthux {
@@ -11,8 +12,8 @@ namespace synthux {
         _hh.SetNoisiness(0.7);
       }
 
-      float Process(bool gate) {
-        return _hh.Process(gate);
+      float Process(bool trigger) {
+        return _hh.Process(trigger);
       }
 
       void SetTone(float value) {
