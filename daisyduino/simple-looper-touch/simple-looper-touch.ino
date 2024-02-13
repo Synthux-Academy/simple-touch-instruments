@@ -27,6 +27,14 @@ static MValue m_pan[kTracksCount];
 
 static simpletouch::Touch touch;
 
+bool record_on = false;
+
+void onTouch(uint16_t pad) {
+  if (pad == 0) {
+    record_on = !record_on;
+  }
+}
+
 ////////////////////////////////////////////////////////////
 /////////////////// SDRAM BUFFER /////////////////////////// 
 static const uint32_t kBufferLengthSec = 60;
@@ -76,6 +84,7 @@ void setup() {
   float sample_rate = DAISY.get_samplerate();
 
   touch.Init();
+  touch.SetOnTouch(onTouch);
 
   buffer.Init(buf, kBufferLenghtSamples);
 
@@ -88,6 +97,8 @@ void setup() {
     m_pan[i].Init(0.5f);
     m_volume[i].Init(1.f);
   }
+
+  pinMode(LED_BUILTIN, OUTPUT);
 
   DAISY.begin(AudioCallback);
 }
@@ -144,8 +155,9 @@ void loop() {
   }
 
   // Toggle record
-  auto record_on = touch.IsTouched(0);
+  // auto record_on = touch.IsTouched(0);
   buffer.SetRecording(record_on);
+  digitalWrite(LED_BUILTIN, record_on);
 
   delay(4);
 }
