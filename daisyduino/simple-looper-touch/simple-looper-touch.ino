@@ -29,7 +29,7 @@ static simpletouch::Touch touch;
 
 ////////////////////////////////////////////////////////////
 /////////////////// SDRAM BUFFER /////////////////////////// 
-static const uint32_t kBufferLengthSec = 15;
+static const uint32_t kBufferLengthSec = 60;
 static const uint32_t kSampleRate = 48000;
 static const size_t kBufferLenghtSamples = kBufferLengthSec * kSampleRate;
 static float DSY_SDRAM_BSS buf0[kBufferLenghtSamples];
