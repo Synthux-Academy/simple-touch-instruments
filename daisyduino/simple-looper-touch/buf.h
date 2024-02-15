@@ -32,7 +32,6 @@ class Buffer {
     void SetRecording(bool is_rec_on) {
       if (_state == State::idle) {
         if (is_rec_on) {
-          _rec_head = 0; 
           _state = State::fadein;  
         }
       }
@@ -46,7 +45,7 @@ class Buffer {
     }
 
     void Read(size_t frame, float& out0, float& out1) {
-      frame %= _buffer_length;
+      frame %= _max_loop_length;
       out0 = _buffer[0][frame];
       out1 = _buffer[1][frame];
     }
@@ -67,7 +66,6 @@ class Buffer {
 
         case State::fadeout:
           if (--_envelope_position == 0) {
-            _max_loop_length = _is_full ? _buffer_length : _rec_head;
             _state = State::idle;
           }
           break;
@@ -75,12 +73,17 @@ class Buffer {
       // Calculate fade in/out attenuation
       auto rec_attenuation = static_cast<float>(_envelope_position) * _envelope_slope_kof;
       auto inv_rec_attenuation = 1.f - rec_attenuation;
+
+      //Write buffer
       _buffer[0][_rec_head] = in0 * rec_attenuation + _buffer[0][_rec_head] * inv_rec_attenuation;
       _buffer[1][_rec_head] = in1 * rec_attenuation + _buffer[1][_rec_head] * inv_rec_attenuation;
+      
+      //Advance rec head
       if (++_rec_head == _buffer_length) {
         _is_full = true;
         _rec_head = 0;
       }
+      _max_loop_length = _is_full ? _buffer_length : _rec_head;
     }
 
   private:
