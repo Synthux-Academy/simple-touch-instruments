@@ -1,3 +1,4 @@
+#include "WSerial.h"
 #pragma once
 
 namespace synthux {
@@ -7,10 +8,11 @@ class Buffer {
     Buffer(): 
     _buffer_length      { 0 },
     _max_loop_length    { 0 },
-    _rec_head           { 0 },
+    _write_head         { 0 },
+    _rec_level          { kMaxInputLevel },
     _envelope_position  { 0 },
     _envelope_slope     { 0 },
-    _envelope_slope_kof { 1 },
+    _envelope_slope_kof { 1.f },
     _state              { State::idle },
     _is_full            { false }
     {}
@@ -18,7 +20,7 @@ class Buffer {
     void Init(float **buf, size_t length, size_t envelope_slope = 192) {
       _buffer = buf;
       _buffer_length = length;
-      _envelope_slope= envelope_slope;
+      _envelope_slope = envelope_slope;
       _envelope_slope_kof = 1.f / static_cast<float>(envelope_slope);
       // Reset buffer contents to zero
       memset(_buffer[0], 0, sizeof(float) * length);
@@ -29,9 +31,14 @@ class Buffer {
       return _max_loop_length;
     }
 
-    void SetRecording(bool is_rec_on) {
+    void SetLevel(const float level) {
+      _rec_level = fmap(level, 0.f, kMaxInputLevel, Mapping::EXP);
+    }
+
+    void SetRecording(const bool is_rec_on) {
       if (_state == State::idle) {
         if (is_rec_on) {
+          _write_head = 0;
           _state = State::fadein;  
         }
       }
@@ -50,7 +57,7 @@ class Buffer {
       out1 = _buffer[1][frame];
     }
 
-    void Write(const float in0, const float in1) {
+    void Write(const float in0, const float in1, float& out0, float& out1) {
       switch (_state) {
         case State::idle: 
           return;
@@ -71,19 +78,20 @@ class Buffer {
           break;
       }
       // Calculate fade in/out attenuation
-      auto rec_attenuation = static_cast<float>(_envelope_position) * _envelope_slope_kof;
-      auto inv_rec_attenuation = 1.f - rec_attenuation;
-
+      auto rec_attenuation = static_cast<float>(_envelope_position) * _envelope_slope_kof * _rec_level;
+      
       //Write buffer
-      _buffer[0][_rec_head] = in0 * rec_attenuation + _buffer[0][_rec_head] * inv_rec_attenuation;
-      _buffer[1][_rec_head] = in1 * rec_attenuation + _buffer[1][_rec_head] * inv_rec_attenuation;
+      out0 = in0 * rec_attenuation + _buffer[0][_write_head];
+      out1 = in1 * rec_attenuation + _buffer[1][_write_head];
+      _buffer[0][_write_head] = out0;
+      _buffer[1][_write_head] = out1;
       
       //Advance rec head
-      if (++_rec_head == _buffer_length) {
+      if (++_write_head == _buffer_length) {
         _is_full = true;
-        _rec_head = 0;
+        _write_head = 0;
       }
-      _max_loop_length = _is_full ? _buffer_length : _rec_head;
+      _max_loop_length = _is_full ? _buffer_length : max(_write_head, _max_loop_length);
     }
 
   private:
@@ -94,13 +102,16 @@ class Buffer {
       sustain
     };
     
+    static constexpr float kMaxInputLevel = 0.72f;
+
     float** _buffer;
     size_t  _buffer_length;
     size_t  _max_loop_length;
-    size_t  _rec_head;
+    size_t  _write_head;
     size_t  _envelope_position;
     size_t  _envelope_slope;
     float   _envelope_slope_kof;
+    float   _rec_level;
     State   _state;
     bool    _is_full;
 };

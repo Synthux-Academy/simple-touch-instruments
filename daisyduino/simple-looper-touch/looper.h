@@ -1,6 +1,7 @@
 #pragma once
 #include "buf.h"
 #include <array>
+#include "DaisyDSP.h"
 
 namespace synthux {
 
@@ -11,11 +12,13 @@ class Looper {
   public:
     Looper():
     _buffer             { nullptr },
-    _delta              { 1.f },
+    _delta              { 0.f },
     _volume             { 1.f },
     _release_kof        { 0.f },
-    _loop_start         { 0 },
+    _loop_start         { -1.f },
+    _target_loop_start  { -1.f },
     _win_per_loop       { 0 },
+    _length_kof         { 0 },
     _win_current        { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
@@ -24,8 +27,10 @@ class Looper {
     _mode               { Mode::loop }
     {}
 
-    void Init(Buffer* buffer) {
+    void Init(Buffer* buffer, float sample_rate) {
         _buffer = buffer;
+        _sample_rate = sample_rate;
+        _loop_start_kof = 1.f / (0.15 * sample_rate);
     }
 
     void SetGateOpen(bool open) {
@@ -35,7 +40,7 @@ class Looper {
           _win_current = 0;
           _is_playing = true;
         }
-        else {
+        else if (_mode != Mode::loop) {
           _is_retriggering = true;
         }
         _volume = 1.f;
@@ -56,40 +61,40 @@ class Looper {
       }
       else {
         _mode = Mode::release;
-        auto v = fmap(value, 0, 1, Mapping::EXP);
-        _release_kof = (1.f - v) * 0.000139f * (1 - 0.9 * value);
+        _release_kof = 1.f / (value * value * kMaxReleaseTime * _sample_rate);
       }
     }
 
     void SetSpeed(const float value) {
-        if (value > 0.23 && value < 0.27) {
-          _delta = 1.f;
-          _direction = Direction::rev;
-        }
-        else if (value > 0.48 && value < 0.52) {
+        // Make parabolic keeping the value 0...1,
+        // so it's easier to operate near the middle
+        // where the speed is slow
+        auto mapped_value = daisysp::fmin(daisysp::fmax(4.f * (value * value - value) + 1, 0.f), 1.f);
+        _delta = kSlopeX2 * mapped_value - win_slope;
+        _direction = value > 0.5 ? Direction::fwd : Direction::rev;
+
+        // Make a flat zone so it's easier to catch
+        // the normal speed
+        if (mapped_value > 0.48 && mapped_value < 0.52) {
           _delta = 0.f;
-          _direction = Direction::none;
-        }
-        else if (value > 0.73 && value < 0.77) {
-          _delta = 1.f;
-          _direction = Direction::fwd;
-        }
-        else if (value < 0.5) {
-          _delta = (0.5f - value) * 4.f;
-          _direction = Direction::rev;
+          _length_kof = 1.f;
         }
         else {
-          _delta = (value - 0.5) * 4.f;
-          _direction = Direction::fwd;
+          _length_kof = 1.f / daisysp::fmax(2.f * mapped_value, 0.001f);
         }
     }
 
-    void SetLoop(const float loop_start, const float loop_length) {
-      _loop_start = static_cast<size_t>(loop_start * _buffer->Length());
+    void SetStart(const float loop_start) {
+      auto new_start = static_cast<size_t>(loop_start * _buffer->Length());
+      if (_loop_start < 0) _loop_start = new_start;
+      _target_loop_start = new_start;
+    }
+
+    void SetLength(const float loop_length) {
       // Quantize loop length to the half of the window. Minimum length is one window.
       // This gives 4ms precision (win_slope = 192 @48K).
       // Speed affects quantized loop length. The higher is the speed the shorter is the length.
-      auto new_length = static_cast<size_t>(loop_length * _buffer->Length() / _delta);
+      auto new_length = static_cast<size_t>(loop_length * _buffer->Length() * _length_kof);
       _win_per_loop = std::max(static_cast<size_t>(new_length * kSlopeKof), static_cast<size_t>(2));
     }
   
@@ -97,7 +102,7 @@ class Looper {
       out0 = 0.f;
       out1 = 0.f;
 
-      if (!_is_playing || _direction == Direction::none) return;
+      if (!_is_playing || _direction == Direction::none || _buffer->Length() == 0) return;
       
       auto wrap = false;
       for (auto& w: _wins) {
@@ -121,13 +126,18 @@ class Looper {
         }
       }
 
-      if (!_is_gate_open) {
-        if (_mode == Mode::release) _volume -= _release_kof * _volume;
-        if (_volume <= .02f) {
+      
+      if (!_is_gate_open && _mode == Mode::release) {
+        if (_volume <= .01f) {
           _Stop();
           return;
         }
+        else {
+          fonepole(_volume, 0, _release_kof);
+        }
       }
+
+      fonepole(_loop_start, _target_loop_start, _loop_start_kof);
 
       auto w_out0 = 0.f;
       auto w_out1 = 0.f;
@@ -135,7 +145,7 @@ class Looper {
           if (!w.IsActive()) continue;
           w_out0 = 0.f;
           w_out1 = 0.f;
-          w.Process(_buffer, w_out0, w_out1);
+          w.Process(_buffer, w_out0, w_out1, _loop_start);
           out0 += w_out0 * _volume;
           out1 += w_out1 * _volume;
       }
@@ -145,8 +155,8 @@ private:
     bool _Activate(float play_head) {
       for (auto& w: _wins) {
           if (!w.IsActive()) {
-              auto delta = _direction == Direction::rev ? -_delta : _delta;
-              w.Activate(play_head, delta, _loop_start);
+              auto increment = _direction == Direction::rev ? -1.f : 1.f;
+              w.Activate(play_head + _delta * increment, increment);
               return true;
           }
       }
@@ -170,17 +180,22 @@ private:
       rev
     };
 
-    static constexpr size_t kMinLoopLength = 2 * win_slope;
+    static constexpr float kSlopeX2 = 2.f * win_slope; 
     static constexpr float kSlopeKof = 1.f / static_cast<float>(win_slope);
+    static constexpr float kMaxReleaseTime = 15.f; //seconds
 
     Buffer* _buffer;
     std::array<Window<win_slope>, 3> _wins;
 
+    float _sample_rate;
     float _delta;
+    float _length_kof;
     float _volume;
     float _release_kof;
     float _last_playhead;
-    size_t _loop_start;
+    float _loop_start;
+    float _target_loop_start;
+    float _loop_start_kof;
     size_t _win_per_loop;
     size_t _win_current;
     Mode _mode;
@@ -211,10 +226,9 @@ public:
     _is_active    { false }
     {}
 
-    void Activate(float start, float delta, size_t loop_start) {
+    void Activate(float start, float delta) {
         _play_head = start;
         _delta = delta;
-        _loop_start = loop_start;
         _iterator = 0;
         _is_active = true;
     }
@@ -229,7 +243,7 @@ public:
 
     float PlayHead() { return _play_head; }
 
-    void Process(Buffer* buf, float& out0, float& out1) {
+    void Process(Buffer* buf, float& out0, float& out1, const float loop_start) {
         // Do linear interpolation as playhead is float
         auto int_ph = static_cast<size_t>(_play_head);
         auto frac_ph = _play_head - int_ph;
@@ -239,8 +253,8 @@ public:
         auto a1 = 0.f;
         auto b0 = 0.f;
         auto b1 = 0.f;
-        buf->Read(int_ph + _loop_start, a0, a1);
-        buf->Read(next_ph + _loop_start, b0, b1);
+        buf->Read(int_ph + loop_start, a0, a1);
+        buf->Read(next_ph + loop_start, b0, b1);
         
         auto att = _Attenuation();
         out0 = (a0 + frac_ph * (b0 - a0)) * att;
@@ -265,7 +279,7 @@ private:
 
     float _play_head;
     float _delta;
-    size_t _loop_start;
+    float _loop_start;
     size_t _iterator;
     bool _is_active;
 };

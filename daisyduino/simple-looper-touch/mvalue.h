@@ -33,6 +33,10 @@ class MValue {
     return _value;
   }
 
+  bool IsChanging() {
+    return _is_changing;
+  }
+
   float Value() {
     return _value;
   }
