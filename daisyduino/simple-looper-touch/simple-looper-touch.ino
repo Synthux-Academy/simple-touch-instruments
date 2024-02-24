@@ -101,7 +101,7 @@ void setup() {
   }
 
   m_in_level.Init(1.0);
-  m_in_thres.Init(0.1);
+  m_in_thres.Init(0.0056); //~ -45dB
 
   pinMode(LED_BUILTIN, OUTPUT);
 

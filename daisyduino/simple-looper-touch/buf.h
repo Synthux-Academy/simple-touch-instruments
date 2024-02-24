@@ -1,4 +1,3 @@
-#include "WSerial.h"
 #pragma once
 
 namespace synthux {
@@ -9,7 +8,7 @@ class Buffer {
     _buffer_length      { 0 },
     _max_loop_length    { 0 },
     _write_head         { 0 },
-    _rec_level          { kMaxInputLevel },
+    _rec_level          { .89f },
     _envelope_position  { 0 },
     _envelope_slope     { 0 },
     _envelope_slope_kof { 1.f },
@@ -32,7 +31,7 @@ class Buffer {
     }
 
     void SetLevel(const float level) {
-      _rec_level = fmap(level, 0.f, kMaxInputLevel, Mapping::EXP);
+      _rec_level = fmap(level, .001f, .89f, Mapping::EXP); // ~ -60...-1 dB
     }
 
     void SetRecording(const bool is_rec_on) {
@@ -101,8 +100,6 @@ class Buffer {
       fadeout,
       sustain
     };
-    
-    static constexpr float kMaxInputLevel = 0.72f;
 
     float** _buffer;
     size_t  _buffer_length;

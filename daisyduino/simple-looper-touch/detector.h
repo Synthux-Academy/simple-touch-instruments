@@ -6,7 +6,7 @@ namespace synthux {
 class Detector {
 public:
   Detector(): 
-    _treshold     { 0.5 },
+    _db_threshold { -40.f },
     _kof_rise     { 0.1 },
     _kof_fall     { 0.99 },
     _average      { 0 },
@@ -33,7 +33,8 @@ public:
   }
 
   void SetTreshold(float value) {
-    _treshold = fmap(value, 0.f, 1.f, Mapping::EXP);
+    if (value <= 0) _db_threshold = -90.f;
+    else _db_threshold = 20.f * daisysp::fastlog10f(value);
   }
 
   bool IsOpen() {
@@ -69,12 +70,12 @@ public:
 
     auto abs_in = abs(in0);
     if (abs_in > _average) {
-      _average = _kof_rise * _average + (1.f - _kof_rise) * abs_in;
+      _average = _kof_rise * (_average - abs_in) + abs_in;
     } 
     else {
-      _average = _kof_fall * _average + (1.f - _kof_fall) * abs_in;
+      _average = _kof_fall * (_average - abs_in) + abs_in;
     }
-    
+
     if (++_write_head == kLength) {
       _check_average();
       _average = 0;
@@ -84,7 +85,8 @@ public:
 
 private:
   void _check_average() {
-    if (10 * _average >= _treshold) {
+    auto db_avr = 20.f * daisysp::fastlog10f(_average);
+    if (db_avr >= _db_threshold) {
       _read_head = 0;
       _is_open = true;
     }
@@ -98,7 +100,7 @@ private:
   float   _average;
   float   _kof_rise;
   float   _kof_fall;
-  float   _treshold;
+  float   _db_threshold;
   size_t  _write_head;
   size_t  _read_head;
   bool    _is_armed;
