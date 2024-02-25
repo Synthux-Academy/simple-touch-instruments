@@ -1,5 +1,5 @@
 #pragma once
-#include "buf.h"
+#include "buffer.h"
 #include <array>
 #include "DaisyDSP.h"
 

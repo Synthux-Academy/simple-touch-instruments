@@ -85,7 +85,7 @@ class Buffer {
       _buffer[0][_write_head] = out0;
       _buffer[1][_write_head] = out1;
       
-      //Advance rec head
+      //Advance write head
       if (++_write_head == _buffer_length) {
         _is_full = true;
         _write_head = 0;

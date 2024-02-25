@@ -178,7 +178,7 @@ void loop() {
     buffer.SetLevel(m_in_level.Process(in_value));
   }
 
-  // Indicate record
+  // Indicate recording state
   if (detector.IsOpen()) {
     led_on = true;
   }
