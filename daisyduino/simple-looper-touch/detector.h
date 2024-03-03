@@ -77,6 +77,7 @@ public:
     // Make sample positive
     auto abs_in = abs(in0);
 
+    // Exponential Moving Average (EVA) aka IIR one-pole filter.
     // Because kKofRise is way higher than
     // kKofFall, the contribution of the samples above
     // average is higher than of those below.

@@ -1,3 +1,4 @@
+#include "WSerial.h"
 #pragma once
 #include "buffer.h"
 #include <array>
@@ -18,7 +19,8 @@ class Looper {
     _loop_start         { -1.f },
     _target_loop_start  { -1.f },
     _win_per_loop       { 0 },
-    _length_kof         { 0 },
+    _loop_length        { 1.f },
+    _length_kof         { 1.f },
     _win_current        { 0 },
     _is_playing         { false },
     _is_gate_open       { false },
@@ -66,38 +68,47 @@ class Looper {
     }
 
     void SetSpeed(const float value) {
-        // Make parabolic keeping the value 0...1,
+        // Make parabolic value keeping the range 0...1,
         // so it's easier to operate near the middle
-        // where the speed is slow
-        auto mapped_value = daisysp::fmin(daisysp::fmax(4.f * (value * value - value) + 1, 0.f), 1.f);
+        // where the speed is slow.
+        auto mapped_value = daisysp::fclamp(4.f * (value * value - value) + 1, 0.f, 1.f);
         _delta = kSlopeX2 * mapped_value - win_slope;
         _direction = value > 0.5 ? Direction::fwd : Direction::rev;
 
-        // Make a flat zone so it's easier to catch
-        // the normal speed
+        // Make a flat zone so it's easier to catch the normal speed
         if (mapped_value > 0.48 && mapped_value < 0.52) {
           _delta = 0.f;
           _length_kof = 1.f;
         }
         else {
-          _length_kof = 1.f / daisysp::fmax(2.f * mapped_value, 0.001f);
+          // Calculate correction coefficient for the loop length
+          _length_kof = 1 / daisysp::fmax((2 * mapped_value), 0.01f);
         }
+        InvalidateLength();
     }
 
     void SetStart(const float loop_start) {
       auto new_start = static_cast<size_t>(loop_start * _buffer->Length());
+      // If _loop_start was not defined yet, set it right away
       if (_loop_start < 0) _loop_start = new_start;
+      // Set target value. Transition smoothing is happening
+      // in process method using one-pole filter.
       _target_loop_start = new_start;
     }
 
     void SetLength(const float loop_length) {
+      _loop_length = loop_length;
+      InvalidateLength();
+    }
+  
+    void InvalidateLength() {
       // Quantize loop length to the half of the window. Minimum length is one window.
       // This gives 4ms precision (win_slope = 192 @48K).
       // Speed affects quantized loop length. The higher is the speed the shorter is the length.
-      auto new_length = static_cast<size_t>(loop_length * _buffer->Length() * _length_kof);
+      auto new_length = static_cast<size_t>(_loop_length * _buffer->Length() * _length_kof);
       _win_per_loop = std::max(static_cast<size_t>(new_length * kSlopeKof), static_cast<size_t>(2));
     }
-  
+
     void Process(float& out0, float& out1) {
       out0 = 0.f;
       out1 = 0.f;
@@ -133,11 +144,11 @@ class Looper {
           return;
         }
         else {
-          fonepole(_volume, 0, _release_kof);
+          daisysp::fonepole(_volume, 0, _release_kof);
         }
       }
 
-      fonepole(_loop_start, _target_loop_start, _loop_start_kof);
+      daisysp::fonepole(_loop_start, _target_loop_start, _loop_start_kof);
 
       auto w_out0 = 0.f;
       auto w_out1 = 0.f;
@@ -189,6 +200,7 @@ private:
 
     float _sample_rate;
     float _delta;
+    float _loop_length;
     float _length_kof;
     float _volume;
     float _release_kof;
@@ -245,18 +257,24 @@ public:
 
     void Process(Buffer* buf, float& out0, float& out1, const float loop_start) {
         // Do linear interpolation as playhead is float
+        // Take integer part of the play head
         auto int_ph = static_cast<size_t>(_play_head);
+        // Take fractional part
         auto frac_ph = _play_head - int_ph;
+        // Take next integer inves
         auto next_ph = _delta > 0 ? int_ph + 1 : int_ph - 1;
 
+        // Read the buffer
         auto a0 = 0.f;
         auto a1 = 0.f;
         auto b0 = 0.f;
         auto b1 = 0.f;
         buf->Read(int_ph + loop_start, a0, a1);
         buf->Read(next_ph + loop_start, b0, b1);
-        
+
+        // Apply window envelope
         auto att = _Attenuation();
+        // Interpolate
         out0 = (a0 + frac_ph * (b0 - a0)) * att;
         out1 = (a1 + frac_ph * (b1 - a1)) * att;
         
