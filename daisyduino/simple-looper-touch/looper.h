@@ -32,7 +32,7 @@ class Looper {
     void Init(Buffer* buffer, float sample_rate) {
         _buffer = buffer;
         _sample_rate = sample_rate;
-        _loop_start_kof = 1.f / (0.15 * sample_rate);
+        _loop_start_kof = 1.f / (0.02 * sample_rate);
     }
 
     void SetGateOpen(bool open) {
