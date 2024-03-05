@@ -1,7 +1,7 @@
-#include "WSerial.h"
 #pragma once
 #include "buffer.h"
 #include <array>
+#include <cmath>
 #include "DaisyDSP.h"
 
 namespace synthux {
@@ -223,7 +223,11 @@ private:
 template<size_t length>
 constexpr std::array<float, length> Slope() {
     std::array<float, length> slope { 0 };
-    for (int i = 0; i < length; i++) slope[i] = static_cast<float>(i) / static_cast<float>(length - 1);
+    auto half_pi = HALFPI_F;
+    for (int i = 0; i < length; i++) {
+      auto sin = std::sin(half_pi * static_cast<float>(i) / static_cast<float>(length - 1));
+      slope[i] = sin * sin;
+    }
     return slope;
 }
 
