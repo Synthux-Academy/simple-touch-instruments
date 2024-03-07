@@ -8,6 +8,23 @@ namespace synthux {
 
 template<size_t win_slope> class Window;
 
+template<size_t win_slope>
+class Hann {
+  private:
+  static constexpr std::array<float, win_slope> hannCurve() {
+    std::array<float, win_slope> slope { 0 };
+    auto half_pi = HALFPI_F;
+    for (int i = 0; i < win_slope; i++) {
+      auto sin = std::sin(half_pi * static_cast<float>(i) / static_cast<float>(win_slope - 1));
+      slope[i] = sin * sin;
+    }
+    return slope;
+  }
+
+  public:
+  static constexpr std::array<float, win_slope> curve { hannCurve() };
+};
+
 template<size_t win_slope = 192>
 class Looper {
   public:
@@ -68,10 +85,16 @@ class Looper {
     }
 
     void SetSpeed(const float value) {
-        // Make parabolic value keeping the range 0...1,
-        // so it's easier to operate near the middle
-        // where the speed is slow.
-        auto mapped_value = daisysp::fclamp(4.f * (value * value - value) + 1, 0.f, 1.f);
+        // Use Hann window shape keeping the range 0...1,
+        // so it's easier to operate near the middle and at ends
+        size_t idx = 0;
+        if (value > 0.5) {
+          idx = static_cast<size_t>((2 * win_slope - 1) * (value - 0.5));
+        }
+        else {
+          idx = win_slope - static_cast<size_t>(2 * win_slope * value) - 1;
+        }
+        auto mapped_value = Hann<win_slope>::curve[idx];
         _delta = kSlopeX2 * mapped_value - win_slope;
         _direction = value > 0.5 ? Direction::fwd : Direction::rev;
 
@@ -219,18 +242,6 @@ private:
     
 };
 
-// Calculates slope look-up table.
-template<size_t length>
-constexpr std::array<float, length> Slope() {
-    std::array<float, length> slope { 0 };
-    auto half_pi = HALFPI_F;
-    for (int i = 0; i < length; i++) {
-      auto sin = std::sin(half_pi * static_cast<float>(i) / static_cast<float>(length - 1));
-      slope[i] = sin * sin;
-    }
-    return slope;
-}
-
 template<size_t win_slope>
 class Window {
 public:
@@ -292,12 +303,11 @@ public:
 private:
     float _Attenuation() {
       auto idx = (_iterator < kHalf) ? _iterator : kSize - _iterator - 1;
-      return kSlope[idx];
+      return Hann<win_slope>::curve[idx];
     }
 
     static constexpr size_t kHalf { win_slope };
     static constexpr size_t kSize { 2 * win_slope };
-    static constexpr std::array<float, win_slope> kSlope { Slope<win_slope>() };
 
     float _play_head;
     float _delta;

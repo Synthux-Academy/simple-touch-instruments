@@ -115,7 +115,7 @@ void setup() {
 
   for (auto i = 0; i < kLayerCount; i++) {
     m_release[i].Init(1.0f);
-    m_speed[i].Init(0.86f);
+    m_speed[i].Init(0.75f);
     m_pan[i].Init(0.5f);
     m_volume[i].Init(1.f);
   }
