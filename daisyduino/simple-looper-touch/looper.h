@@ -1,40 +1,28 @@
 #pragma once
 #include "buffer.h"
 #include <array>
-#include <cmath>
 #include "DaisyDSP.h"
+#include "hann.h"
 
 namespace synthux {
 
+enum class LooperSpeedMode {
+      increment,
+      delta
+    };
+
 template<size_t win_slope> class Window;
-
-template<size_t win_slope>
-class Hann {
-  private:
-  static constexpr std::array<float, win_slope> hannCurve() {
-    std::array<float, win_slope> slope { 0 };
-    auto half_pi = HALFPI_F;
-    for (int i = 0; i < win_slope; i++) {
-      auto sin = std::sin(half_pi * static_cast<float>(i) / static_cast<float>(win_slope - 1));
-      slope[i] = sin * sin;
-    }
-    return slope;
-  }
-
-  public:
-  static constexpr std::array<float, win_slope> curve { hannCurve() };
-};
 
 template<size_t win_slope = 192>
 class Looper {
   public:
     Looper():
     _buffer             { nullptr },
-    _delta              { 0.f },
+    _playhead_delta     { 0.f },
+    _playhead_increment { 0.f },
     _volume             { 1.f },
     _release_kof        { 0.f },
-    _loop_start         { -1.f },
-    _target_loop_start  { -1.f },
+    _loop_start         { 0 },
     _win_per_loop       { 0 },
     _loop_length        { 1.f },
     _length_kof         { 1.f },
@@ -43,13 +31,13 @@ class Looper {
     _is_gate_open       { false },
     _direction          { Direction::none },
     _is_retriggering    { false },
-    _mode               { Mode::loop }
+    _mode               { Mode::loop },
+    _speed_mode         { LooperSpeedMode::increment }
     {}
 
     void Init(Buffer* buffer, float sample_rate) {
         _buffer = buffer;
         _sample_rate = sample_rate;
-        _loop_start_kof = 1.f / (0.02 * sample_rate);
     }
 
     void SetGateOpen(bool open) {
@@ -84,23 +72,22 @@ class Looper {
       }
     }
 
+    LooperSpeedMode SpeedMode() {
+      return _speed_mode;
+    }
+
+    void SetSpeedMode(const LooperSpeedMode mode) {
+      _speed_mode = mode;
+    }
+
     void SetSpeed(const float value) {
-        // Use Hann window shape keeping the range 0...1,
-        // so it's easier to operate near the middle and at ends
-        size_t idx = 0;
-        if (value > 0.5) {
-          idx = static_cast<size_t>((2 * win_slope - 1) * (value - 0.5));
-        }
-        else {
-          idx = win_slope - static_cast<size_t>(2 * win_slope * value) - 1;
-        }
-        auto mapped_value = Hann<win_slope>::curve[idx];
-        _delta = kSlopeX2 * mapped_value - win_slope;
+        _playhead_delta = kSlopeX2 * value - win_slope;
+        _playhead_increment = 2.f * value;
         _direction = value > 0.5 ? Direction::fwd : Direction::rev;
 
         // Make a flat zone so it's easier to catch the normal speed
-        if (mapped_value > 0.48 && mapped_value < 0.52) {
-          _delta = 0.f;
+        if (value > 0.48 && value < 0.52) {
+          _playhead_delta = 0.f;
           _length_kof = 1.f;
         }
         else {
@@ -111,12 +98,7 @@ class Looper {
     }
 
     void SetStart(const float loop_start) {
-      auto new_start = static_cast<size_t>(loop_start * _buffer->Length());
-      // If _loop_start was not defined yet, set it right away
-      if (_loop_start < 0) _loop_start = new_start;
-      // Set target value. Transition smoothing is happening
-      // in process method using one-pole filter.
-      _target_loop_start = new_start;
+      _loop_start = static_cast<size_t>(loop_start * (_buffer->Length() - 1));
     }
 
     void SetLength(const float loop_length) {
@@ -171,15 +153,13 @@ class Looper {
         }
       }
 
-      daisysp::fonepole(_loop_start, _target_loop_start, _loop_start_kof);
-
       auto w_out0 = 0.f;
       auto w_out1 = 0.f;
       for (auto& w: _wins) {
           if (!w.IsActive()) continue;
           w_out0 = 0.f;
           w_out1 = 0.f;
-          w.Process(_buffer, w_out0, w_out1, _loop_start);
+          w.Process(_buffer, w_out0, w_out1);
           out0 += w_out0 * _volume;
           out1 += w_out1 * _volume;
       }
@@ -190,7 +170,13 @@ private:
       for (auto& w: _wins) {
           if (!w.IsActive()) {
               auto increment = _direction == Direction::rev ? -1.f : 1.f;
-              w.Activate(play_head + _delta * increment, increment);
+              if (_speed_mode == LooperSpeedMode::delta) {
+                play_head += _playhead_delta * increment;
+              }
+              else {
+                increment *= _playhead_increment;
+              }
+              w.Activate(play_head, increment, _loop_start);
               return true;
           }
       }
@@ -222,19 +208,18 @@ private:
     std::array<Window<win_slope>, 3> _wins;
 
     float _sample_rate;
-    float _delta;
+    float _playhead_delta;
+    float _playhead_increment;
     float _loop_length;
     float _length_kof;
-    float _volume;
     float _release_kof;
-    float _last_playhead;
-    float _loop_start;
-    float _target_loop_start;
-    float _loop_start_kof;
+    float _volume;
+    size_t _loop_start;
     size_t _win_per_loop;
     size_t _win_current;
     Mode _mode;
     Direction _direction;
+    LooperSpeedMode _speed_mode;
     bool _is_playing;
     bool _is_zero_speed;
     bool _is_gate_open;
@@ -247,15 +232,16 @@ class Window {
 public:
     Window():
     _play_head    { 0 },
-    _delta        { 0 },
     _loop_start   { 0 },
+    _playhead_delta        { 0 },
     _iterator     { 0 },
     _is_active    { false }
     {}
 
-    void Activate(float start, float delta) {
+    void Activate(float start, float delta, size_t loop_start) {
         _play_head = start;
-        _delta = delta;
+        _loop_start = loop_start;
+        _playhead_delta = delta;
         _iterator = 0;
         _is_active = true;
     }
@@ -270,22 +256,22 @@ public:
 
     float PlayHead() { return _play_head; }
 
-    void Process(Buffer* buf, float& out0, float& out1, const float loop_start) {
+    void Process(Buffer* buf, float& out0, float& out1) {
         // Do linear interpolation as playhead is float
         // Take integer part of the play head
         auto int_ph = static_cast<size_t>(_play_head);
         // Take fractional part
         auto frac_ph = _play_head - int_ph;
         // Take next integer inves
-        auto next_ph = _delta > 0 ? int_ph + 1 : int_ph - 1;
+        auto next_ph = _playhead_delta > 0 ? int_ph + 1 : int_ph - 1;
 
         // Read the buffer
         auto a0 = 0.f;
         auto a1 = 0.f;
         auto b0 = 0.f;
         auto b1 = 0.f;
-        buf->Read(int_ph + loop_start, a0, a1);
-        buf->Read(next_ph + loop_start, b0, b1);
+        buf->Read(int_ph + _loop_start, a0, a1);
+        buf->Read(next_ph + _loop_start, b0, b1);
 
         // Apply window envelope
         auto att = _Attenuation();
@@ -293,7 +279,7 @@ public:
         out0 = (a0 + frac_ph * (b0 - a0)) * att;
         out1 = (a1 + frac_ph * (b1 - a1)) * att;
         
-        _play_head += _delta;
+        _play_head += _playhead_delta;
         if (_play_head < 0) {
           _play_head += buf->Length();
         }
@@ -310,9 +296,9 @@ private:
     static constexpr size_t kSize { 2 * win_slope };
 
     float _play_head;
-    float _delta;
-    float _loop_start;
+    float _playhead_delta;
     size_t _iterator;
+    size_t _loop_start;
     bool _is_active;
 };
 

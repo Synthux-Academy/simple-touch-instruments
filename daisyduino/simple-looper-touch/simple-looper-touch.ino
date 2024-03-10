@@ -5,10 +5,9 @@
 #include "looper.h"
 #include "aknob.h"
 #include "mvalue.h"
+#include "hann.h"
 
 using namespace synthux;
-
-static const int kLayerCount = 3;
 
 ////////////////////////////////////////////////////////////
 /////////////////// SDRAM BUFFER /////////////////////////// 
@@ -23,7 +22,10 @@ static float* buf[2] = { buf0, buf1 };
 ///////////////////////// MODULES /////////////////////////////
 static Detector detector;
 static Buffer buffer;
-static synthux::Looper<> layers[kLayerCount];
+
+static const int kLayerCount = 3;
+static const int kWindowSlope = 192;
+static synthux::Looper<kWindowSlope> layers[kLayerCount];
 
 ////////////////////////////////////////////////////////////
 //////////////// KNOBS, SWITCHES and JACKS /////////////////
@@ -43,6 +45,8 @@ static MValue m_pan[kLayerCount];
 static MValue m_in_level;
 static MValue m_in_thres;
 
+static int speed_mode_switch = D(S07);
+
 static simpletouch::Touch touch;
 
 uint8_t layer_pads[kLayerCount] = { 3, 5, 7 };
@@ -59,6 +63,16 @@ void onTouch(uint16_t pad) {
   }
   else if (pad == 0) {
     detector.SetArmed(true);
+  }
+  
+  if (pad == 2) {
+    using SM = synthux::LooperSpeedMode;
+    for (auto i = 0; i < kLayerCount; i++) {
+      if (touch.IsTouched(layer_pads[i])) {
+        auto mode = layers[i].SpeedMode() == SM::delta ? SM::increment : SM::delta;
+        layers[i].SetSpeedMode(mode);
+      }
+    }
   }
   
   // After stopping the record the loop length setting
@@ -123,6 +137,7 @@ void setup() {
   m_in_level.Init(1.0);
   m_in_thres.Init(0.0056); //~ -45dB
 
+  pinMode(speed_mode_switch, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
 
   DAISY.begin(AudioCallback);
@@ -134,7 +149,9 @@ bool led_on = false;
 ///////////////////////////////////////////////////////////////
 ///////////////////////// LOOP ////////////////////////////////
 void loop() {
-  auto loop_speed = speed_knob.Process();
+  // Use Hann curve keeping the range 0...1, 
+  // so it's easier to operate near the middle and extremes
+  auto loop_speed = Hann<kWindowSlope>::fmap_symmetric(speed_knob.Process());
   auto loop_start = start_knob.Process();
   auto loop_length = fmap(length_knob.Process(), 0.f, 1.f, Mapping::EXP);
   auto release = release_knob.Process();
