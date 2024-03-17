@@ -23,11 +23,6 @@ static Scale scale;
 static Touch touch;
 static Oscillator lfo;
 
-static constexpr uint8_t kNone = 0xff;
-std::array<uint8_t, kVoxCount> notes;
-std::array<uint8_t, kVoxCount> order;
-uint8_t touchedPadsCount = 0;
-
 void onTouch(uint16_t pad) {
   auto vox_index = driver.onNoteOn(pad);
   auto note = driver.noteAt(vox_index);
@@ -36,18 +31,6 @@ void onTouch(uint16_t pad) {
 
 void onRelease(uint16_t pad) {
   driver.onNoteOff(pad);
-}
-
-void releaseAt(uint8_t index) {
-  auto note = order[index];
-  uint8_t i;
-  for (i = 0; i < kVoxCount; i++) {
-    if (notes[i] == note) notes[i] = kNone;
-  }
-  for (i = index; i < kVoxCount - 1; i++) {
-    order[i] = order[i+1];
-  }
-  touchedPadsCount--;
 }
 
 float output;
