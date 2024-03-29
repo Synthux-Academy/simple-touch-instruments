@@ -31,7 +31,7 @@ class Buffer {
     }
 
     void SetLevel(const float level) {
-      _rec_level = fmap(level, .001f, .89f, Mapping::EXP); // ~ -60...-1 dB
+      _rec_level = level;
     }
 
     void SetRecording(const bool is_rec_on) {

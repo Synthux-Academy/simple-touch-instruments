@@ -16,7 +16,7 @@ static const uint32_t kSampleRate = 48000;
 static const size_t kBufferLenghtSamples = kBufferLengthSec * kSampleRate;
 static float DSY_SDRAM_BSS buf0[kBufferLenghtSamples];
 static float DSY_SDRAM_BSS buf1[kBufferLenghtSamples];
-static float* buf[2] = { buf0, buf1 };
+static float* raw_buf[2] = { buf0, buf1 };
 
 ///////////////////////////////////////////////////////////////
 ///////////////////////// MODULES /////////////////////////////
@@ -51,6 +51,8 @@ static simpletouch::Touch touch;
 
 uint8_t layer_pads[kLayerCount] = { 3, 5, 7 };
 
+bool monitor_on = false;
+
 void onTouch(uint16_t pad) {
   auto stop_record = false;
   if (detector.IsArmed()) {
@@ -81,22 +83,29 @@ void onTouch(uint16_t pad) {
     detector.SetArmed(false);
     for (auto& l: layers) l.InvalidateLength();  
   }
+
+  if (pad == 11) monitor_on = !monitor_on;
 }
 
 ///////////////////////////////////////////////////////////////
 ///////////////////// AUDIO CALLBACK //////////////////////////
+
 float layers_sum[2];
 float layer_out[2];
 float mix_volume[kLayerCount][2];
 float pre_out0, pre_out1;
+float r_out0, r_out1;
 void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
     detector.Process(in[0][i], in[1][i], pre_out0, pre_out1);
     buffer.SetRecording(detector.IsOpen());
     if (buffer.IsRecording()) {
-      buffer.Write(pre_out0, pre_out1, out[0][i], out[1][i]);
-      continue;
-    };
+      buffer.Write(pre_out0, pre_out1, r_out0, r_out1);
+    }
+    else {
+      r_out0 = 0;
+      r_out1 = 0;
+    }
     
     layers_sum[0] = 0;
     layers_sum[1] = 0;
@@ -107,8 +116,14 @@ void AudioCallback(float **in, float **out, size_t size) {
         layers_sum[1] += layer_out[1] * mix_volume[i][1];
       }
     }
-    out[0][i] = layers_sum[0];
-    out[1][i] = layers_sum[1];
+
+    if (monitor_on) {
+      layers_sum[0] += in[0][i] * m_in_level.Value();
+      layers_sum[1] += in[1][i] * m_in_level.Value();
+    }
+
+    out[0][i] = SoftClip(layers_sum[0] + r_out0);
+    out[1][i] = SoftClip(layers_sum[1] + r_out1);
   }
 }
 
@@ -122,7 +137,7 @@ void setup() {
   touch.Init();
   touch.SetOnTouch(onTouch);
 
-  buffer.Init(buf, kBufferLenghtSamples);
+  buffer.Init(raw_buf, kBufferLenghtSamples);
 
   for (auto& t: layers) t.Init(&buffer, sample_rate);
 
@@ -212,7 +227,7 @@ void loop() {
     m_in_thres.SetActive(is_thres_mod, in_value);
     m_in_level.SetActive(!is_thres_mod, in_value);
     detector.SetTreshold(m_in_thres.Process(in_value));
-    buffer.SetLevel(m_in_level.Process(in_value));
+    buffer.SetLevel(m_in_level.Process(fmap(in_value, .001f, .89f, Mapping::EXP))); // ~ -60...-1 dB
   }
 
   // Indicate recording state
