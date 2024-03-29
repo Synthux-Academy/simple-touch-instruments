@@ -7,9 +7,8 @@ class Hann {
   private:
   static constexpr std::array<float, win_slope> hannCurve() {
     std::array<float, win_slope> slope { 0 };
-    auto half_pi = HALFPI_F;
     for (int i = 0; i < win_slope; i++) {
-      auto sin = std::sin(half_pi * static_cast<float>(i) / static_cast<float>(win_slope - 1));
+      auto sin = std::sin(HALFPI_F * static_cast<float>(i) / static_cast<float>(win_slope - 1));
       slope[i] = sin * sin;
     }
     return slope;

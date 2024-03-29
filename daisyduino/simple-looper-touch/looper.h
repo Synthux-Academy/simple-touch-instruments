@@ -1,3 +1,4 @@
+#include "WSerial.h"
 #pragma once
 #include "buffer.h"
 #include <array>
@@ -23,10 +24,8 @@ class Looper {
     _volume             { 1.f },
     _release_kof        { 0.f },
     _loop_start         { 0 },
-    _win_per_loop       { 0 },
     _loop_length        { 1.f },
-    _length_kof         { 1.f },
-    _win_current        { 0 },
+    _norm_length        { 1.f },
     _is_playing         { false },
     _is_gate_open       { false },
     _direction          { Direction::none },
@@ -44,7 +43,6 @@ class Looper {
       if (open && !_is_gate_open) {
         if (!_is_playing) {
           _Activate(0);
-          _win_current = 0;
           _is_playing = true;
         }
         else if (_mode != Mode::loop) {
@@ -81,37 +79,35 @@ class Looper {
     }
 
     void SetSpeed(const float value) {
+       // Calculate delta for two speed change options
         _playhead_delta = kSlopeX2 * value - win_slope;
         _playhead_increment = 2.f * value;
-        _direction = value > 0.5 ? Direction::fwd : Direction::rev;
-
+        
         // Make a flat zone so it's easier to catch the normal speed
-        if (value > 0.48 && value < 0.52) {
+        if (value < 0.02) {
+          _playhead_delta = -192.f;
+        }
+        else if (value > 0.48 && value < 0.52) {
           _playhead_delta = 0.f;
-          _length_kof = 1.f;
+          _playhead_increment = 1.f;
         }
-        else {
-          // Calculate correction coefficient for the loop length
-          _length_kof = 1 / daisysp::fmax((2 * mapped_value), 0.01f);
-        }
-        InvalidateLength();
+    }
+
+    void SetReverse(const bool value) {
+      _direction = value ? Direction::rev : Direction::fwd;
     }
 
     void SetStart(const float loop_start) {
       _loop_start = static_cast<size_t>(loop_start * (_buffer->Length() - 1));
     }
 
-    void SetLength(const float loop_length) {
-      _loop_length = loop_length;
+    void SetLength(const float norm_length) {
+      _norm_length = norm_length;
       InvalidateLength();
     }
-  
+
     void InvalidateLength() {
-      // Quantize loop length to the half of the window. Minimum length is one window.
-      // This gives 4ms precision (win_slope = 192 @48K).
-      // Speed affects quantized loop length. The higher is the speed the shorter is the length.
-      auto new_length = static_cast<size_t>(_loop_length * _buffer->Length() * _length_kof);
-      _win_per_loop = std::max(static_cast<size_t>(new_length * kSlopeKof), static_cast<size_t>(2));
+      _loop_length = max(static_cast<size_t>(_norm_length * _buffer->Length()), kSlopeX2);
     }
 
     void Process(float& out0, float& out1) {
@@ -123,7 +119,8 @@ class Looper {
       auto wrap = false;
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
-        if (_win_current >= _win_per_loop - 2) { //we're interested in the last but one window
+        auto start = w.PlayHead();
+        if (start >= _loop_length - win_slope) {
           if (_mode == Mode::one_shot) {
             _Stop();
             continue;
@@ -131,12 +128,11 @@ class Looper {
           wrap = true;
         }
 
-        auto start = w.PlayHead();
         if (wrap || _is_retriggering) {
-          start = _direction == Direction::rev ? _win_per_loop * win_slope - 1 : 0;
+          start = _direction == Direction::rev ? _loop_length - 1 : 0;
         }
+
         if (_Activate(start)) {
-          _win_current = wrap || _is_retriggering ? 0 : _win_current + 1;
           _is_retriggering = false;
           break;
         }
@@ -166,17 +162,18 @@ class Looper {
     }
 
 private:
-    bool _Activate(float play_head) {
+    bool _Activate(float playhead) { 
+      _playhead = playhead;
       for (auto& w: _wins) {
           if (!w.IsActive()) {
               auto increment = _direction == Direction::rev ? -1.f : 1.f;
               if (_speed_mode == LooperSpeedMode::delta) {
-                play_head += _playhead_delta * increment;
+                playhead += _playhead_delta * increment;
               }
               else {
                 increment *= _playhead_increment;
               }
-              w.Activate(play_head, increment, _loop_start);
+              w.Activate(playhead, increment, _loop_start);
               return true;
           }
       }
@@ -200,7 +197,7 @@ private:
       rev
     };
 
-    static constexpr float kSlopeX2 = 2.f * win_slope; 
+    static constexpr size_t kSlopeX2 = 2 * win_slope; 
     static constexpr float kSlopeKof = 1.f / static_cast<float>(win_slope);
     static constexpr float kMaxReleaseTime = 15.f; //seconds
 
@@ -208,20 +205,18 @@ private:
     std::array<Window<win_slope>, 3> _wins;
 
     float _sample_rate;
+    float _playhead;
     float _playhead_delta;
     float _playhead_increment;
+    float _norm_length;
     float _loop_length;
-    float _length_kof;
     float _release_kof;
     float _volume;
     size_t _loop_start;
-    size_t _win_per_loop;
-    size_t _win_current;
     Mode _mode;
     Direction _direction;
     LooperSpeedMode _speed_mode;
     bool _is_playing;
-    bool _is_zero_speed;
     bool _is_gate_open;
     bool _is_retriggering;
     
@@ -231,15 +226,15 @@ template<size_t win_slope>
 class Window {
 public:
     Window():
-    _play_head    { 0 },
-    _loop_start   { 0 },
-    _playhead_delta        { 0 },
-    _iterator     { 0 },
-    _is_active    { false }
+    _playhead        { 0 },
+    _playhead_delta  { 0 },
+    _loop_start      { 0 },
+    _iterator        { 0 },
+    _is_active       { false }
     {}
 
     void Activate(float start, float delta, size_t loop_start) {
-        _play_head = start;
+        _playhead = start;
         _loop_start = loop_start;
         _playhead_delta = delta;
         _iterator = 0;
@@ -254,14 +249,14 @@ public:
 
     bool IsHalf() {  return _iterator == kHalf;  }
 
-    float PlayHead() { return _play_head; }
+    float PlayHead() { return _playhead; }
 
     void Process(Buffer* buf, float& out0, float& out1) {
         // Do linear interpolation as playhead is float
         // Take integer part of the play head
-        auto int_ph = static_cast<size_t>(_play_head);
+        auto int_ph = static_cast<size_t>(_playhead);
         // Take fractional part
-        auto frac_ph = _play_head - int_ph;
+        auto frac_ph = _playhead - int_ph;
         // Take next integer inves
         auto next_ph = _playhead_delta > 0 ? int_ph + 1 : int_ph - 1;
 
@@ -279,9 +274,9 @@ public:
         out0 = (a0 + frac_ph * (b0 - a0)) * att;
         out1 = (a1 + frac_ph * (b1 - a1)) * att;
         
-        _play_head += _playhead_delta;
-        if (_play_head < 0) {
-          _play_head += buf->Length();
+        _playhead += _playhead_delta;
+        if (_playhead < 0) {
+          _playhead += buf->Length();
         }
         if (++_iterator == kSize) _is_active = false;
     }
@@ -295,7 +290,7 @@ private:
     static constexpr size_t kHalf { win_slope };
     static constexpr size_t kSize { 2 * win_slope };
 
-    float _play_head;
+    float _playhead;
     float _playhead_delta;
     size_t _iterator;
     size_t _loop_start;

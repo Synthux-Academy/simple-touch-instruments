@@ -117,7 +117,6 @@ void AudioCallback(float **in, float **out, size_t size) {
 void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
-
   Serial.begin(9600);
 
   touch.Init();
@@ -129,7 +128,7 @@ void setup() {
 
   for (auto i = 0; i < kLayerCount; i++) {
     m_release[i].Init(1.0f);
-    m_speed[i].Init(0.75f);
+    m_speed[i].Init(0.5f);
     m_pan[i].Init(0.5f);
     m_volume[i].Init(1.f);
   }
@@ -151,7 +150,8 @@ bool led_on = false;
 void loop() {
   // Use Hann curve keeping the range 0...1, 
   // so it's easier to operate near the middle and extremes
-  auto loop_speed = Hann<kWindowSlope>::fmap_symmetric(speed_knob.Process());
+  auto raw_loop_speed = speed_knob.Process();
+  auto loop_speed = Hann<kWindowSlope>::fmap_symmetric(raw_loop_speed);
   auto loop_start = start_knob.Process();
   auto loop_length = fmap(length_knob.Process(), 0.f, 1.f, Mapping::EXP);
   auto release = release_knob.Process();
@@ -178,6 +178,7 @@ void loop() {
     // Set per-layer parameters
     if (layer_on) {
       l.SetSpeed(m_speed[i].Process(loop_speed));
+      l.SetReverse(raw_loop_speed < .5f);
       l.SetRelease(m_release[i].Process(release));
 
       auto start = m_start[i].Process(loop_start);
