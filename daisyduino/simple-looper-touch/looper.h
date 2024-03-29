@@ -24,7 +24,7 @@ class Looper {
     _volume             { 1.f },
     _release_kof        { 0.f },
     _loop_start         { 0 },
-    _loop_length        { 1.f },
+    _loop_length        { 0 },
     _norm_length        { 1.f },
     _is_playing         { false },
     _is_gate_open       { false },
@@ -107,7 +107,7 @@ class Looper {
     }
 
     void InvalidateLength() {
-      _loop_length = max(static_cast<size_t>(_norm_length * _buffer->Length()), kSlopeX2);
+      _loop_length = max(static_cast<size_t>(_norm_length * _buffer->Length()) - win_slope, kSlopeX2);
     }
 
     void Process(float& out0, float& out1) {
@@ -120,7 +120,7 @@ class Looper {
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
         auto start = w.PlayHead();
-        if (start >= _loop_length - win_slope) {
+        if (start >= _loop_length) {
           if (_mode == Mode::one_shot) {
             _Stop();
             continue;
@@ -168,12 +168,14 @@ private:
           if (!w.IsActive()) {
               auto increment = _direction == Direction::rev ? -1.f : 1.f;
               if (_speed_mode == LooperSpeedMode::delta) {
-                playhead += _playhead_delta * increment;
+                if (playhead != 0) {
+                  playhead += _playhead_delta * increment;
+                }
               }
               else {
                 increment *= _playhead_increment;
               }
-              w.Activate(playhead, increment, _loop_start);
+              w.Activate(playhead, increment, _loop_start, _loop_length);
               return true;
           }
       }
@@ -208,10 +210,10 @@ private:
     float _playhead;
     float _playhead_delta;
     float _playhead_increment;
-    float _norm_length;
-    float _loop_length;
     float _release_kof;
     float _volume;
+    float _norm_length;
+    size_t _loop_length;
     size_t _loop_start;
     Mode _mode;
     Direction _direction;
@@ -233,9 +235,10 @@ public:
     _is_active       { false }
     {}
 
-    void Activate(float start, float delta, size_t loop_start) {
+    void Activate(float start, float delta, size_t loop_start, size_t loop_length) {
         _playhead = start;
         _loop_start = loop_start;
+        _loop_length = loop_length;
         _playhead_delta = delta;
         _iterator = 0;
         _is_active = true;
@@ -276,7 +279,7 @@ public:
         
         _playhead += _playhead_delta;
         if (_playhead < 0) {
-          _playhead += buf->Length();
+          _playhead += _loop_length;
         }
         if (++_iterator == kSize) _is_active = false;
     }
@@ -294,6 +297,7 @@ private:
     float _playhead_delta;
     size_t _iterator;
     size_t _loop_start;
+    size_t _loop_length;
     bool _is_active;
 };
 
