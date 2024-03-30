@@ -95,11 +95,13 @@ float layer_out[2];
 float mix_volume[kLayerCount][2];
 float pre_out0, pre_out1;
 float r_out0, r_out1;
+bool is_recording;
 void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
     detector.Process(in[0][i], in[1][i], pre_out0, pre_out1);
     buffer.SetRecording(detector.IsOpen());
-    if (buffer.IsRecording()) {
+    is_recording = buffer.IsRecording();
+    if (is_recording) {
       buffer.Write(pre_out0, pre_out1, r_out0, r_out1);
     }
     else {
@@ -117,7 +119,7 @@ void AudioCallback(float **in, float **out, size_t size) {
       }
     }
 
-    if (monitor_on) {
+    if (monitor_on && !is_recording) {
       layers_sum[0] += in[0][i] * m_in_level.Value();
       layers_sum[1] += in[1][i] * m_in_level.Value();
     }

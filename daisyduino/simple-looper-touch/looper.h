@@ -107,7 +107,7 @@ class Looper {
     }
 
     void InvalidateLength() {
-      _loop_length = max(static_cast<size_t>(_norm_length * _buffer->Length()) - win_slope, kSlopeX2);
+      _loop_length = max(static_cast<size_t>(_norm_length * _buffer->Length()), kSlopeX2);
     }
 
     void Process(float& out0, float& out1) {
@@ -116,20 +116,12 @@ class Looper {
 
       if (!_is_playing || _direction == Direction::none || _buffer->Length() == 0) return;
       
-      auto wrap = false;
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
         auto start = w.PlayHead();
-        if (start >= _loop_length) {
-          if (_mode == Mode::one_shot) {
+        if (_mode == Mode::one_shot && start >= _loop_length - win_slope) {
             _Stop();
             continue;
-          }
-          wrap = true;
-        }
-
-        if (wrap || _is_retriggering) {
-          start = _direction == Direction::rev ? _loop_length - 1 : 0;
         }
 
         if (_Activate(start)) {
@@ -137,7 +129,6 @@ class Looper {
           break;
         }
       }
-
       
       if (!_is_gate_open && _mode == Mode::release) {
         if (_volume <= .01f) {
@@ -280,6 +271,9 @@ public:
         _playhead += _playhead_delta;
         if (_playhead < 0) {
           _playhead += _loop_length;
+        }
+        else if (_playhead >= _loop_length) {
+          _playhead -= _loop_length;
         }
         if (++_iterator == kSize) _is_active = false;
     }
