@@ -52,9 +52,11 @@ static simpletouch::Touch touch;
 uint8_t layer_pads[kLayerCount] = { 3, 5, 7 };
 
 bool monitor_on = false;
+bool modifier_is_on = false;
 
 void onTouch(uint16_t pad) {
   auto stop_record = false;
+  auto reset = false;
   if (detector.IsArmed()) {
     // Pad 0 works as a switch toggling record on/off. 
     if (pad == 0) stop_record = true;
@@ -64,7 +66,14 @@ void onTouch(uint16_t pad) {
       for (auto p: layer_pads) if (pad == p) stop_record = true;
   }
   else if (pad == 0) {
-    detector.SetArmed(true);
+    if (modifier_is_on) {
+      stop_record = true;
+      reset = true;
+      buffer.Clear();
+    }
+    else {
+      detector.SetArmed(true);
+    }
   }
   
   if (pad == 2) {
@@ -81,7 +90,10 @@ void onTouch(uint16_t pad) {
   // should be invalidated and recalculated for all layers
   if (stop_record) {
     detector.SetArmed(false);
-    for (auto& l: layers) l.InvalidateLength();  
+    for (auto& l: layers) {
+      if (reset) l.Stop();
+      else l.InvalidateLength();
+    }
   }
 
   if (pad == 11) monitor_on = !monitor_on;
@@ -89,7 +101,6 @@ void onTouch(uint16_t pad) {
 
 ///////////////////////////////////////////////////////////////
 ///////////////////// AUDIO CALLBACK //////////////////////////
-
 float layers_sum[2];
 float layer_out[2];
 float mix_volume[kLayerCount][2];
@@ -220,14 +231,15 @@ void loop() {
     mix_volume[i][1] = volume * pan1;
   }
 
+  modifier_is_on = touch.IsTouched(10);
+
   // If no layer pad is touched the loop start
   // knob controls input level and if pad 10 ("TO")
   // is touched - input treshold
   if (!layer_on) {
     auto in_value = start_knob.Process();
-    auto is_thres_mod = touch.IsTouched(10);
-    m_in_thres.SetActive(is_thres_mod, in_value);
-    m_in_level.SetActive(!is_thres_mod, in_value);
+    m_in_thres.SetActive(modifier_is_on, in_value);
+    m_in_level.SetActive(!modifier_is_on, in_value);
     detector.SetTreshold(m_in_thres.Process(in_value));
     buffer.SetLevel(m_in_level.Process(fmap(in_value, .001f, .89f, Mapping::EXP))); // ~ -60...-1 dB
   }

@@ -57,6 +57,11 @@ class Looper {
       return _is_playing;
     }
 
+    void Stop() {
+      _is_playing = false;
+      for (auto& w: _wins) w.Deactivate();
+    }
+
     void SetRelease(const float value) {
       if (value <= 0.002f) {
         _mode = Mode::one_shot;
@@ -120,7 +125,7 @@ class Looper {
         if (!w.IsHalf()) continue;
         auto start = w.PlayHead();
         if (_mode == Mode::one_shot && start >= _loop_length - win_slope) {
-            _Stop();
+            Stop();
             continue;
         }
 
@@ -132,7 +137,7 @@ class Looper {
       
       if (!_is_gate_open && _mode == Mode::release) {
         if (_volume <= .01f) {
-          _Stop();
+          Stop();
           return;
         }
         else {
@@ -171,11 +176,6 @@ private:
           }
       }
       return false;
-    }
-
-    void _Stop() {
-      _is_playing = false;
-      for (auto& w: _wins) w.Deactivate();
     }
 
     enum class Mode {

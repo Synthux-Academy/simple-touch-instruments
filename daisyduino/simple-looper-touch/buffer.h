@@ -21,9 +21,7 @@ class Buffer {
       _buffer_length = length;
       _envelope_slope = envelope_slope;
       _envelope_slope_kof = 1.f / static_cast<float>(envelope_slope);
-      // Reset buffer contents to zero
-      memset(_buffer[0], 0, sizeof(float) * length);
-      memset(_buffer[1], 0, sizeof(float) * length);
+      Clear();
     }
 
     size_t Length() {
@@ -91,6 +89,16 @@ class Buffer {
         _write_head = 0;
       }
       _max_loop_length = _is_full ? _buffer_length : max(_write_head, _max_loop_length);
+    }
+
+    void Clear() {
+      memset(_buffer[0], 0, sizeof(float) * _buffer_length);
+      memset(_buffer[1], 0, sizeof(float) * _buffer_length);
+      _write_head = 0;
+      _is_full = false;
+      _envelope_position = 0;
+      _max_loop_length = 0;
+      _state = State::idle;
     }
 
   private:
