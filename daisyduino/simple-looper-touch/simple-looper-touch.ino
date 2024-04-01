@@ -101,42 +101,37 @@ void onTouch(uint16_t pad) {
 
 ///////////////////////////////////////////////////////////////
 ///////////////////// AUDIO CALLBACK //////////////////////////
-float layers_sum[2];
+float pre_out[2];
 float layer_out[2];
 float mix_volume[kLayerCount][2];
-float pre_out0, pre_out1;
-float r_out0, r_out1;
-bool is_recording;
+float bus[2];
 void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
-    detector.Process(in[0][i], in[1][i], pre_out0, pre_out1);
+    detector.Process(in[0][i], in[1][i], pre_out[0], pre_out[1]);
     buffer.SetRecording(detector.IsOpen());
-    is_recording = buffer.IsRecording();
-    if (is_recording) {
-      buffer.Write(pre_out0, pre_out1, r_out0, r_out1);
+
+    if (buffer.IsRecording()) {
+      buffer.Write(pre_out[0], pre_out[1], bus[0], bus[1]);
+    }
+    else if (monitor_on) {
+        bus[0] = in[0][i] * m_in_level.Value();
+        bus[1] = in[1][i] * m_in_level.Value();
     }
     else {
-      r_out0 = 0;
-      r_out1 = 0;
+      bus[0] = 0;
+      bus[1] = 0;
     }
     
-    layers_sum[0] = 0;
-    layers_sum[1] = 0;
     for (auto i = 0; i < kLayerCount; i++) {
       if (layers[i].IsPlaying()) { 
         layers[i].Process(layer_out[0], layer_out[1]);
-        layers_sum[0] += layer_out[0] * mix_volume[i][0];
-        layers_sum[1] += layer_out[1] * mix_volume[i][1];
+        bus[0] += layer_out[0] * mix_volume[i][0];
+        bus[1] += layer_out[1] * mix_volume[i][1];
       }
     }
 
-    if (monitor_on && !is_recording) {
-      layers_sum[0] += in[0][i] * m_in_level.Value();
-      layers_sum[1] += in[1][i] * m_in_level.Value();
-    }
-
-    out[0][i] = SoftClip(layers_sum[0] + r_out0);
-    out[1][i] = SoftClip(layers_sum[1] + r_out1);
+    out[0][i] = SoftClip(bus[0]);
+    out[1][i] = SoftClip(bus[1]);
   }
 }
 
