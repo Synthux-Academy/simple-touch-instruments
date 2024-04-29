@@ -10,6 +10,18 @@
 
 static std::array<synthux::Vox, synthux::Driver::kVoices> vox;
 
+////////////////////////////////////////////////////////////
+///////////////////// KNOBS & SWITCHES /////////////////////
+//
+//    |-| (*)   (*)   (*)    (*) |-|
+//    | | S31   S32   S33    S34 | |
+//    |||                        |||
+//    |_| (*)                (*) |_|
+//    S36 S30                S35 S37
+//
+//      S10 o o S09    o S07
+//                   o S08
+
 static synthux::Terminal terminal;
 static synthux::AKnob freq_knob(A(S30));
 static synthux::AKnob spread_knob(A(S32));

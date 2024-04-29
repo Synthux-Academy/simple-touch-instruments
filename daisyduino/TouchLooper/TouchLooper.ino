@@ -28,7 +28,17 @@ static const int kWindowSlope = 192;
 static synthux::Looper<kWindowSlope> layers[kLayerCount];
 
 ////////////////////////////////////////////////////////////
-//////////////// KNOBS, SWITCHES and JACKS /////////////////
+///////////////////// KNOBS & SWITCHES /////////////////////
+//
+//    |-| (*)   (*)   (*)    (*) |-|
+//    | | S31   S32   S33    S34 | |
+//    |||                        |||
+//    |_| (*)                (*) |_|
+//    S36 S30                S35 S37
+//
+//      S10 o o S09    o S07
+//                   o S08
+
 static std::array<AKnob<>, kLayerCount> mix_knobs = { AKnob(A(S32)), AKnob(A(S33)), AKnob(A(S34)) };
 static AKnob speed_knob(A(S30));
 static AKnob release_knob(A(S35));
