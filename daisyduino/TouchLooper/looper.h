@@ -9,7 +9,13 @@ namespace synthux {
 
 enum class LooperSpeedMode {
       increment,
-      delta
+      shift
+    };
+
+enum class LooperPlayMode {
+      one_shot,
+      loop,
+      release
     };
 
 template<size_t win_slope> class Window;
@@ -30,7 +36,7 @@ class Looper {
     _is_gate_open       { false },
     _direction          { Direction::none },
     _is_retriggering    { false },
-    _mode               { Mode::loop },
+    _mode               { LooperPlayMode::loop },
     _speed_mode         { LooperSpeedMode::increment }
     {}
 
@@ -45,7 +51,7 @@ class Looper {
           _Activate(0);
           _is_playing = true;
         }
-        else if (_mode != Mode::loop) {
+        else if (_mode != LooperPlayMode::loop) {
           _is_retriggering = true;
         }
         _volume = 1.f;
@@ -64,15 +70,19 @@ class Looper {
 
     void SetRelease(const float value) {
       if (value <= 0.002f) {
-        _mode = Mode::one_shot;
+        _mode = LooperPlayMode::one_shot;
       }
       else if (value >= 0.998f) {
-        _mode = Mode::loop;
+        _mode = LooperPlayMode::loop;
       }
       else {
-        _mode = Mode::release;
+        _mode = LooperPlayMode::release;
         _release_kof = 1.f / (value * value * kMaxReleaseTime * _sample_rate);
       }
+    }
+
+    LooperPlayMode Mode() {
+      return _mode;
     }
 
     LooperSpeedMode SpeedMode() {
@@ -92,7 +102,7 @@ class Looper {
         if (value < 0.02) {
           _playhead_delta = -192.f;
         }
-        else if (value > 0.48 && value < 0.52) {
+        else if (value > 0.45 && value < 0.55) {
           _playhead_delta = 0.f;
           _playhead_increment = 1.f;
         }
@@ -124,7 +134,7 @@ class Looper {
       for (auto& w: _wins) {
         if (!w.IsHalf()) continue;
         auto start = w.PlayHead();
-        if (_mode == Mode::one_shot && start >= _loop_length - win_slope) {
+        if (_mode == LooperPlayMode::one_shot && start >= _loop_length - win_slope) {
             Stop();
             continue;
         }
@@ -135,7 +145,7 @@ class Looper {
         }
       }
       
-      if (!_is_gate_open && _mode == Mode::release) {
+      if (!_is_gate_open && _mode == LooperPlayMode::release) {
         if (_volume <= .01f) {
           Stop();
           return;
@@ -162,13 +172,16 @@ private:
       _playhead = playhead;
       for (auto& w: _wins) {
           if (!w.IsActive()) {
+              //Initially incrementing one sample at a time in either deirection
               auto increment = _direction == Direction::rev ? -1.f : 1.f;
-              if (_speed_mode == LooperSpeedMode::delta) {
+              if (_speed_mode == LooperSpeedMode::shift) { //Variable shift mode
+                // Upon start the first window starts with zero...
                 if (playhead != 0) {
+                  //... afterwards every window gets shifted by delta
                   playhead += _playhead_delta * increment;
                 }
               }
-              else {
+              else { // Variable increment mode
                 increment *= _playhead_increment;
               }
               w.Activate(playhead, increment, _loop_start, _loop_length);
@@ -177,12 +190,6 @@ private:
       }
       return false;
     }
-
-    enum class Mode {
-      one_shot,
-      loop,
-      release
-    };
 
     enum class Direction {
       none,
@@ -206,8 +213,8 @@ private:
     float _norm_length;
     size_t _loop_length;
     size_t _loop_start;
-    Mode _mode;
     Direction _direction;
+    LooperPlayMode _mode;
     LooperSpeedMode _speed_mode;
     bool _is_playing;
     bool _is_gate_open;
