@@ -145,7 +145,7 @@ float humanized_envelope(float env, uint8_t length) {
 }
 
 ////////////////////////////////////////////////////////////
-///////////////////// CALLBACKS ////////////////////////////
+///////////////////// TOUCH CALLBACKS //////////////////////
 void OnPadTouch(uint16_t pad) {
  // Scale & Tempo
   if (pad == 0) {
@@ -163,6 +163,14 @@ void OnPadTouch(uint16_t pad) {
       scale.SetScaleIndex(scale_index);
     }
     return;
+  }
+
+  //Mono/poly
+  if (pad == 11) {
+    if (is_to_touched) {
+      if (driver.IsMono()) driver.SetPoly();
+      else driver.SetMono();
+    }
   }
 
   //Notes
@@ -212,6 +220,8 @@ void Reset() {
   driver.Reset();
 }
 
+////////////////////////////////////////////////////////////
+////////////////////// ARP CALLBACKS ///////////////////////
 void OnArpNoteOn(uint8_t num, uint8_t vel) { 
   driver.NoteOn(num);
 }
@@ -219,10 +229,14 @@ void OnArpNoteOff(uint8_t num) {
   driver.NoteOff(num);
 }
 
+////////////////////////////////////////////////////////////
+///////////////////// CLOCK CALLBACK ///////////////////////
 void OnClockTick() { 
   if (trig.Tick() && ptn.Tick()) arp.Trigger();
 }
 
+////////////////////////////////////////////////////////////
+//////////////////// DRIVER CALLBACKS ///////////////////////
 void OnDriverNoteOn(uint8_t vox_idx, uint8_t num, bool is_stealing) {
   auto h_env = arp_on ? humanized_envelope(env, ptn.Length()) : env;
   auto freq = arp_on ? humanized_note(num) : scale.FreqAt(num);
@@ -230,7 +244,7 @@ void OnDriverNoteOn(uint8_t vox_idx, uint8_t num, bool is_stealing) {
   flt.SetEnvelope(h_env);
   flt.Trigger(driver.ActiveCount() == 1);
   v.SetEnvelope(h_env);
-  v.NoteOn(freq, 1.f, true);
+  v.NoteOn(freq, 1.f, driver.ActiveCount() != 1);
 }
 
 void OnDriverNoteOff(uint8_t vox_idx) {
