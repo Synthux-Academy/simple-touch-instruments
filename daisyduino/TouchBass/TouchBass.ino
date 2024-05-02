@@ -84,13 +84,13 @@ static XFade xfade;
 ////////////////////////// STATE ///////////////////////////
 
 std::array<bool, kNotesCount> hold;
-bool latch = false;
-bool arp_on = false;
-bool is_to_touched = false;
-bool is_ch_touched = false;
+auto latch = false;
+auto arp_on = false;
+auto is_to_touched = false;
+auto is_ch_touched = false;
 auto scale_index = 0;
-float tempo = .3f;
-float env = 0;
+auto tempo = .45f;
+auto env = 0.f;
 
 ////////////////////////////////////////////////////////////
 ////////////////////// HUMANIZE ////////////////////////////
