@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DaisyDuino.h"
+#include "lutsinosc.h"
 
 namespace synthux {
 
@@ -23,7 +24,6 @@ public:
     _freq_env.SetSustainLevel(0.0);
 
     _osc.Init(sample_rate);
-    _osc.SetWaveform(Oscillator::WAVE_SIN);
     _osc.SetFreq(_base_freq);
   }
 
@@ -37,9 +37,8 @@ public:
     auto freq = _freq_env.Process(trigger);
     if (is_gate_open) gate_counter--;
     _noise.SetAmp(amp);
-    _osc.SetFreq(_base_freq + freq * 1000.0);
-    _osc.SetAmp(amp);
-    return _osc.Process() + _noise.Process() * _noise_level;
+    _osc.SetFreq(_base_freq + freq * 1000.f);
+    return _osc.Process() * amp + _noise.Process() * _noise_level;
   }
 
   void SetTone(float value) {
@@ -55,7 +54,7 @@ private:
   Adsr _amp_env;
   Adsr _freq_env;
   WhiteNoise _noise;
-  Oscillator _osc;
+  LUTSinOsc<> _osc;
   float _noise_level = .03f;
   float _base_freq = 50.f;
 };
