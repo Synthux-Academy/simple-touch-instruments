@@ -11,6 +11,7 @@
 #include "simplesd.h"
 #include "simplehh.h"
 #include "click.h"
+#include "xfade.h"
 
 using namespace synthux;
 using namespace simpletouch;
@@ -44,6 +45,7 @@ enum Param {
 static AKnob bd_knob(A(S32));
 static AKnob sd_knob(A(S34));
 static AKnob hh_knob(A(S33));
+static AKnob verb_knob(A(S35));
 static array<AKnob<>, kDrumCount> drum_knobs = { bd_knob, sd_knob, hh_knob };
 
 ///////////////////////////////////////
@@ -102,27 +104,32 @@ static SimpleBD bd;
 static SimpleSD sd;
 static SimpleHH hh;
 
+static ReverbSc verb;
+static XFade xfade;
+
 ///////////////////////////////////////////////////////////////
 //////////////////////// VARIABLES ////////////////////////////
 static constexpr float kToneOffset = 0.09;
 bool trig[kDrumCount] = { false, false, false };
-float tones[kDrumCount] = { 0.5f, 0.5f, 0.5f };
-float tonesA[kDrumCount] = { 0.41f, 0.41f, 0.41f }; //tones - timbre offset
-float tonesB[kDrumCount] = { 0.59f, 0.59f, 0.59f }; //tones + timbre offset
-float mix_kof[kDrumCount] = { 1.0f, 0.4f, 0.5f }; //bd, sd, hh
+float tones[kDrumCount] = { .5f, .5f, .5f };
+float tonesA[kDrumCount] = { .41f, .41f, .41f }; //tones - timbre offset
+float tonesB[kDrumCount] = { .59f, .59f, .59f }; //tones + timbre offset
+float mix_kof[kDrumCount] = { 1.f, .4f, .5f }; //bd, sd, hh
 float mix_volume[kDrumCount][2] = { 
   { mix_kof[BD], mix_kof[BD] },
   { mix_kof[SD], mix_kof[SD] },
   { mix_kof[HH], mix_kof[HH] }
 };
 
-bool click_trig = false;
 size_t click_cnt = 0;
-bool click_on = false;
-bool blink = false;
+auto click_trig = false;
+auto click_on = false;
+auto blink = false;
 
-bool is_recording = false;
-bool is_clearing = false;
+auto is_to_touched = false;
+auto is_ch_touched = false;
+auto is_recording = false;
+auto is_clearing = false;
 
 ///////////////////////////////////////////////////////////////
 ////////////////////// TOUCH CALLBACKS ////////////////////////
@@ -190,6 +197,9 @@ void OnClockTick() {
 ///////////////////// AUDIO CALLBACK //////////////////////////
 float click_out;
 float drum_out[kDrumCount];
+float verb_in[2];
+float verb_out[2];
+float bus[2];
 void AudioCallback(float **in, float **out, size_t size) {  
   //Advance clock
   clck.Tick();
@@ -202,25 +212,35 @@ void AudioCallback(float **in, float **out, size_t size) {
   for (auto i = 0; i < size; i++) {
     // Zero out as there's no guarantee that the buffer
     // is supplied with zero values.
-    out[0][i] = out[1][i] = 0;
     
     //Mix drum tracks
     drum_out[BD] = bd.Process(trig[BD]);
     drum_out[SD] = sd.Process(trig[SD]); 
     drum_out[HH] = hh.Process(trig[HH]);
+
+    bus[0] = bus[1] = 0;
+
     for (auto k = 0; k < kDrumCount; k++) {
-      out[0][i] += drum_out[k] * mix_volume[k][0];
-      out[1][i] += drum_out[k] * mix_volume[k][1];  
+      bus[0] += drum_out[k] * mix_volume[k][0];
+      bus[1] += drum_out[k] * mix_volume[k][1];  
       trig[k] = false;
     }
-    
+
+    xfade.Process(0, 0, bus[0], bus[1], verb_in[0], verb_in[1]);
+    verb.Process(verb_in[0], verb_in[1], &(verb_out[0]), &(verb_out[1]));
+    bus[0] = (bus[0] + verb_out[0]) * .75f;
+    bus[1] = (bus[1] + verb_out[1]) * .75f;
+
     //Mix click
     if (click_on) {
       click_out = click.Process(click_trig) * 0.7;
-      out[0][i] += click_out;
-      out[1][i] += click_out;
+      bus[0] += click_out;
+      bus[1] += click_out;
       click_trig = false;
     }
+
+    out[0][i] = bus[0];
+    out[1][i] = bus[1];
   }
 }
 
@@ -240,6 +260,10 @@ void setup() {
   bd.Init(sample_rate);
   sd.Init(sample_rate);
   hh.Init(sample_rate);
+
+  verb.Init(sample_rate);
+  verb.SetFeedback(0.4);
+  verb.SetLpFreq(10000.f);
 
   for (auto i = 0; i < kDrumCount; i++) {
     drum_knobs[i].Init();
@@ -281,6 +305,8 @@ void loop() {
   sd_track.SetClearing(is_clearing && (touch.IsTouched(kSDPadA) || touch.IsTouched(kSDPadB)));
   hh_track.SetClearing(is_clearing && (touch.IsTouched(kHHPadA) || touch.IsTouched(kHHPadB)));
   
+  xfade.SetStage(verb_knob.Process());
+
   auto mode = knob_mode_switch.Value(); //0 -> pPan, 1 -> pTone, 2 -> pVolume
   for (auto i = 0; i < kDrumCount; i++) {
     knob_val = drum_knobs[i].Process();
