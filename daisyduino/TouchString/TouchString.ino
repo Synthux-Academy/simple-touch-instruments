@@ -47,6 +47,8 @@ static AKnob<kAnalogResolution> damp_fader(A(S37));
 
 static MValue human_string_value;
 static MValue verb_value;
+static MValue pattern_value;
+static MValue shift_value;
 
 static OnOffOn arp_mode_switch(D(S07), D(S08));
 
@@ -65,7 +67,7 @@ static Scale scale;
 static simpletouch::Touch touch;
 static Clock<kPPQN> clck;
 static Trigger<kPPQN> trig;
-static CPattern ptn;
+static CPattern pattern;
 static Arp<kNotesCount, 4> arp;
 static Vox vox;
 static Overdrive drv;
@@ -205,7 +207,7 @@ void OnPadRelease(uint16_t pad) {
 void Reset() {
   clck.Stop();
   trig.Reset();
-  ptn.Reset();
+  pattern.Reset();
   arp.Clear();
 }
 
@@ -217,7 +219,7 @@ void OnArpNoteOn(uint8_t num, uint8_t vel) {
 void OnArpNoteOff(uint8_t num) {}
 
 void OnClockTick() { 
-  if (trig.Tick() && ptn.Tick()) arp.Trigger();
+  if (trig.Tick() && pattern.Tick()) arp.Trigger();
 }
 
 ///////////////////////////////////////////////////////////////
@@ -245,8 +247,6 @@ void setup() {
   float sample_rate = DAISY.AudioSampleRate();
   float buffer_size = DAISY.AudioBlockSize();
 
-  Serial.begin(9600);
-
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
 
@@ -270,6 +270,9 @@ void setup() {
   verb.Init(sample_rate);
   verb.SetFeedback(0.8);
   verb.SetLpFreq(10000.f);
+
+  pattern_value.Init(1.f);
+  shift_value.Init(0.f);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -318,24 +321,36 @@ void loop() {
   structure = struct_knob.Process();
   brightness = bright_knob.Process();
   
-  
   human_note_chance = fmap(human_notes_knob.Process(), 0, 100);
 
   auto human_verb_knob_value = human_verb_knob.Process();
   verb_value.SetActive(is_to_touched, human_verb_knob_value);
   human_string_value.SetActive(!is_to_touched, human_verb_knob_value);
-  if (is_to_touched) verb_value.Process(human_verb_knob_value);
-  else human_string_value.Process(human_verb_knob_value);
-  
+
+  auto pattern_shift_value = pattern_knob.Process();
+  pattern_value.SetActive(!is_to_touched, pattern_shift_value);
+  shift_value.SetActive(is_to_touched, pattern_shift_value);
+
+  if (is_to_touched) {
+    verb_value.Process(human_verb_knob_value);
+    shift_value.Process(pattern_shift_value);
+  }
+  else {
+    human_string_value.Process(human_verb_knob_value);
+    pattern_value.Process(pattern_shift_value);
+  }
+
   human_string_chance = fmap(human_string_value.Value(), 0, 100);
+  
+  pattern.SetOnsets(pattern_value.Value());
+  pattern.SetShift(shift_value.Value());
+
   xfade.SetStage(verb_value.Value());
 
   auto drive = vol_drive_fader.Process();
   drv.SetDrive(0.2f  + drive * .4f);
   volume = 1.f - drive * 0.7;
   volume *= volume;
-
-  ptn.SetOnsets(pattern_knob.Process());
 
   delay(4);
 }
