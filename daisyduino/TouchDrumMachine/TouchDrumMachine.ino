@@ -78,9 +78,9 @@ static const uint16_t kHHPadB = 9;
 static const uint16_t kRecordPad = 10;
 static const uint16_t kClearingPad = 11;
 
-// Comment this if you're not
-// planning using external sync
-#define EXTERNAL_SYNC
+// Uncomment this if you're 
+// using external sync
+// #define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
 static const int clock_pin = D(S31);

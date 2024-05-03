@@ -34,9 +34,9 @@ static const int reverse_switch = D(S07);
 static const int arp_switch_a = D(S09);
 static const int arp_switch_b = D(S10);
 
-// Comment this if you're not
-// planning using external sync
-#define EXTERNAL_SYNC
+// Uncomment this if you're 
+// using external sync
+// #define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
 static const int clk_pin = D(S31);
