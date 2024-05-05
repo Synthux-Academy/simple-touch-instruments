@@ -106,23 +106,26 @@ float humanized_note(uint8_t note) {
   auto note_dice = dice(_rand_engine);
   auto octave_dice = dice(_rand_engine);
   if (human_note_chance < 33) {
-    if (human_note_chance_dice < human_note_chance * 3) {
+    if (human_note_chance_dice < human_note_chance) {
       return (octave_dice < 50) ? freq * .5f : freq * 2.f;
     }
+    else return freq;
   }
   else if (human_note_chance < 66) {
-    if (human_note_chance_dice < static_cast<uint8_t>(human_note_chance * 1.5f)) {
-      if (note_dice >= 50) return scale.Random();
-      else return (octave_dice < 50) ? freq * .5f : freq * 2.f; 
+    if (human_note_chance_dice < human_note_chance) {
+      if (note_dice < 50) freq = scale.Random();
+      if (octave_dice < 25) return freq * .5f;
+      else if (octave_dice > 75) return freq * 2.f; 
     }
+    else return freq;
   }
   else {
-    if (human_note_chance_dice <= 100) {
-      if (note_dice >= 50) return scale.Random();
-      else if (octave_dice < 33) { return freq * 4.f; }
-      else if (octave_dice > 66) { return freq * .25f; }
-      else { return freq; }
-    }
+    if (note_dice < human_note_chance) freq = scale.Random();
+    if (octave_dice < 5) return freq * 4.f;
+    else if (octave_dice < 20) return freq * 2.f;
+    else if (octave_dice > 80) return freq * .5f;
+    else if (octave_dice > 95) return freq * .25f;
+    else return freq; //60% of freq passes through unchanged
   }
 }
 
