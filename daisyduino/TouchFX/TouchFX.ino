@@ -6,6 +6,8 @@
 #include "echo.h"
 #include "softswitch.h"
 #include "xfade.h"
+#include "mvalue.h"
+#include <array>
 
 using namespace synthux;
 using namespace infrasonic;
@@ -29,8 +31,10 @@ static AKnob dly_mod_amount_knob(A(S33));
 static AKnob dly_time_fader(A(S36));
 
 static AKnob verb_tone_knob(A(S34));
-static AKnob verb_mix_knob(A(S35));
+static AKnob verb_mix_drv_level_knob(A(S35));
 static AKnob verb_fb_fader(A(S37));
+
+static MValue verb_mix;
 
 static SoftSwitch drv_on;
 static SoftSwitch dcm_on;
@@ -68,8 +72,10 @@ static Decimator dcm[2];
 static synthux::simpletouch::Touch touch;
 
 bool latch = false;
-float drv_mix;
-float dcm_mix;
+uint8_t drv_mix_index;
+uint8_t dcm_mix_index;
+std::array<MValue, 3> drv_mix_values;
+std::array<MValue, 3> dcm_mix_values;
 
 void OnTouch(uint16_t pad) {
   bool drive = false;
@@ -80,13 +86,13 @@ void OnTouch(uint16_t pad) {
   float crush_level;
 
   switch (pad) {
-    case 0: drive = true; drv_level = .36f; drv_mix = .52f; break;
-    case 3: drive = true; drv_level = .41f; drv_mix = .28f; break;
-    case 4: drive = true; drv_level = .52f; drv_mix = .20f; break;
+    case 0: drive = true; drv_level = .36f; drv_mix_index = 0; break;
+    case 3: drive = true; drv_level = .41f; drv_mix_index = 1; break;
+    case 4: drive = true; drv_level = .52f; drv_mix_index = 2; break;
     case 5: bypass_on.SetOn(!(latch && bypass_on.IsOn())); break; 
-    case 2: crush = true; down_level = 0.f; crush_level = .86f; dcm_mix = .8f; break;
-    case 6: crush = true; down_level = .23f; crush_level = .25f; dcm_mix = .35f; break;
-    case 7: crush = true; down_level = .69f; crush_level = .9f; dcm_mix = .5f; break;
+    case 2: crush = true; down_level = 0.f; crush_level = .86f; dcm_mix_index = 0; break;
+    case 6: crush = true; down_level = .23f; crush_level = .25f; dcm_mix_index = 1; break;
+    case 7: crush = true; down_level = .69f; crush_level = .9f; dcm_mix_index = 2; break;
     case 8: dly_bypass_on.SetOn(!(latch && dly_bypass_on.IsOn())); break;
     case 9: verb_bypass_on.SetOn(!(latch && verb_bypass_on.IsOn())); break;
     default: break;
@@ -130,10 +136,12 @@ float dly_time;
 float dly_bypass;
 float dly_in[2];
 
-float verb_mix;
 float verb_bypass;
 float verb_in[2];
 float verb_out[2];
+
+float drv_mix;
+float dcm_mix;
 
 float bus0;
 float bus1;
@@ -147,9 +155,11 @@ void AudioCallback(float **in, float **out, size_t size) {
     bus0 = in[0][i];
     bus1 = in[1][i];
 
+    drv_mix = drv_mix_values[drv_mix_index].Value();
     drv_fade.SetStage(drv_on.Process());
     drv_fade.Process(bus0, bus1, drv[0].Process(bus0) * drv_mix, drv[1].Process(bus1) * drv_mix, bus0, bus1);
 
+    dcm_mix = dcm_mix_values[dcm_mix_index].Value();
     dcm_fade.SetStage(dcm_on.Process());
     dcm_fade.Process(bus0, bus1, dcm[0].Process(bus0) * dcm_mix, dcm[1].Process(bus1) * dcm_mix, bus0, bus1);
       
@@ -159,7 +169,7 @@ void AudioCallback(float **in, float **out, size_t size) {
     dly_fade.SetStage(dly_bypass);
     dly_fade.Process(bus0, bus1, dly[0].Process(dly_in[0]), dly[1].Process(dly_in[1]), bus0, bus1);
 
-    verb_bypass = verb_bypass_on.Process(true) * verb_mix;
+    verb_bypass = verb_bypass_on.Process(true) * verb_mix.Value();
     verb_in[0] = bus0 * verb_bypass;
     verb_in[1] = bus1 * verb_bypass;
     verb.Process(verb_in[0], verb_in[1], &(verb_out[0]), &(verb_out[1]));
@@ -196,6 +206,14 @@ void setup() {
   bypass_on.Init(sample_rate);
   dly_bypass_on.Init(sample_rate);
   verb_bypass_on.Init(sample_rate);
+
+  drv_mix_values[0].Init(.52f);
+  drv_mix_values[1].Init(.28f);
+  drv_mix_values[2].Init(.20f);
+
+  dcm_mix_values[0].Init(.8f);
+  dcm_mix_values[1].Init(.35f);
+  dcm_mix_values[2].Init(.5f);
 
   drv[0].Init();
   drv[1].Init();
@@ -241,7 +259,26 @@ void loop() {
 
   verb.SetLpFreq(fmap(verb_tone_knob.Process(), 500.f, 18000.f));
   verb.SetFeedback(fmap(verb_fb_fader.Process(), 0.3f, 1.f));
-  verb_mix = verb_mix_knob.Process();
+  auto verb_mix_drv_level = verb_mix_drv_level_knob.Process();
+
+  auto notTouched = !touch.hasTouched();
+  verb_mix.SetActive(notTouched, verb_mix_drv_level);
+  verb_mix.Process(verb_mix_drv_level);
+
+  auto drv_dcm_mix = verb_mix_drv_level * .8f;
+  drv_mix_values[0].SetActive(touch.IsTouched(0), drv_dcm_mix);
+  drv_mix_values[1].SetActive(touch.IsTouched(3), drv_dcm_mix);
+  drv_mix_values[2].SetActive(touch.IsTouched(4), drv_dcm_mix);
+  drv_mix_values[0].Process(drv_dcm_mix);
+  drv_mix_values[1].Process(drv_dcm_mix);
+  drv_mix_values[2].Process(drv_dcm_mix);
+
+  dcm_mix_values[0].SetActive(touch.IsTouched(2), drv_dcm_mix);
+  dcm_mix_values[1].SetActive(touch.IsTouched(6), drv_dcm_mix);
+  dcm_mix_values[2].SetActive(touch.IsTouched(7), drv_dcm_mix);
+  dcm_mix_values[0].Process(drv_dcm_mix);
+  dcm_mix_values[1].Process(drv_dcm_mix);
+  dcm_mix_values[2].Process(drv_dcm_mix);
 
   //Process switch values
   //The value of digitalRead is inverted
