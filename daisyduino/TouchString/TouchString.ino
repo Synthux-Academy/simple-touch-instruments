@@ -352,7 +352,7 @@ void loop() {
 
   auto drive = vol_drive_fader.Process();
   drv.SetDrive(0.2f  + drive * .4f);
-  volume = 1.f - drive * 0.7;
+  volume = 1.f - drive * 0.6;
   volume *= volume;
 
   delay(4);
