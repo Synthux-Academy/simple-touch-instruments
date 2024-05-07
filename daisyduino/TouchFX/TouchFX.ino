@@ -30,7 +30,7 @@ static AKnob dly_mod_speed_knob(A(S32));
 static AKnob dly_mod_amount_knob(A(S33));
 static AKnob dly_time_fader(A(S36));
 
-static AKnob verb_tone_knob(A(S34));
+static AKnob verb_send_knob(A(S34));
 static AKnob verb_mix_drv_level_knob(A(S35));
 static AKnob verb_fb_fader(A(S37));
 
@@ -136,6 +136,7 @@ float dly_time;
 float dly_bypass;
 float dly_in[2];
 
+float verb_send;
 float verb_bypass;
 float verb_in[2];
 float verb_out[2];
@@ -170,8 +171,8 @@ void AudioCallback(float **in, float **out, size_t size) {
     dly_fade.Process(bus0, bus1, dly[0].Process(dly_in[0]), dly[1].Process(dly_in[1]), bus0, bus1);
 
     verb_bypass = verb_bypass_on.Process(true) * verb_mix.Value();
-    verb_in[0] = bus0 * verb_bypass;
-    verb_in[1] = bus1 * verb_bypass;
+    verb_in[0] = bus0 * verb_bypass * verb_send;
+    verb_in[1] = bus1 * verb_bypass * verb_send;
     verb.Process(verb_in[0], verb_in[1], &(verb_out[0]), &(verb_out[1]));
     verb_fade.SetStage(verb_bypass);
     verb_fade.Process(bus0, bus1, verb_out[0], verb_out[1], bus0, bus1);
@@ -226,6 +227,7 @@ void setup() {
   dcm_fade.SetStage(1.f);
 
   verb.Init(sample_rate);
+  verb.SetLpFreq(8000.f);
 
   dly[0].Init(sample_rate, delay_buf0);
   dly[0].SetLagTime(.3f);
@@ -257,8 +259,8 @@ void loop() {
   dly[0].SetFeedback(dly_fb);
   dly[1].SetFeedback(dly_fb);
 
-  verb.SetLpFreq(fmap(verb_tone_knob.Process(), 500.f, 18000.f));
   verb.SetFeedback(fmap(verb_fb_fader.Process(), 0.3f, 1.f));
+  verb_send = verb_send_knob.Process();
   auto verb_mix_drv_level = verb_mix_drv_level_knob.Process();
 
   auto notTouched = !touch.hasTouched();
