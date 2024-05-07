@@ -177,8 +177,8 @@ void AudioCallback(float **in, float **out, size_t size) {
     verb_fade.SetStage(verb_bypass);
     verb_fade.Process(bus0, bus1, verb_out[0], verb_out[1], bus0, bus1);
 
-    out[0][i] = bus0;
-    out[1][i] = bus1;
+    out[0][i] = SoftLimit(bus0);
+    out[1][i] = SoftLimit(bus1);
   }
 }
 
@@ -255,7 +255,7 @@ void loop() {
   //Process knob values
   dly_mix = dly_mix_knob.Process();
   dly_time = fmap(dly_time_fader.Process(), 0.f, 5.f, Mapping::EXP);
-  auto dly_fb = dly_fb_knob.Process() * 1.5;
+  auto dly_fb = dly_fb_knob.Process() * 1.02;
   dly[0].SetFeedback(dly_fb);
   dly[1].SetFeedback(dly_fb);
 

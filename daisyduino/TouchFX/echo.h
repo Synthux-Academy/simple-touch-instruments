@@ -30,7 +30,7 @@ class EchoDelay {
             sample_rate_ = sample_rate;
             delayLine_.Init(buf);
             bpf_.Init(sample_rate);
-            bpf_.SetParams(4000.0f, 0.f);
+            bpf_.SetParams(800.0f, 0.f);
         }
 
         /**
