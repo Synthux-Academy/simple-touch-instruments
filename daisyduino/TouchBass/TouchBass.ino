@@ -401,11 +401,12 @@ void loop() {
 
   human_note_chance = fmap(human_notes_knob.Process(), 0, 100);
 
-  auto flt_value = filter_fader.Process();
+  auto flt_value = fmap(filter_fader.Process(), 0.f, 1.f, Mapping::EXP);
   auto human_verb_knob_value = human_verb_knob.Process();
   verb_value.SetActive(is_to_touched, human_verb_knob_value);
   human_env_value.SetActive(!is_to_touched, human_verb_knob_value);
-  flt_freq.SetActive(!is_to_touched, flt_value);
+
+  flt_freq.SetActive(!is_to_touched && !is_ch_touched, flt_value);
   flt_reso.SetActive(is_to_touched, flt_value);
   flt_env_amount.SetActive(is_ch_touched, flt_value);
   flt.SetEnvelopeMode(arp_on ? Envelope::Mode::AR : Envelope::Mode::ASR);
