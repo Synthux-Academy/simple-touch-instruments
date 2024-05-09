@@ -40,7 +40,7 @@ public:
     if (value < 0.5) {
       _t_attack = _t_min_attack;
       _t_decay = static_cast<size_t>(_t_range_2x * value * value) + _t_min_decay_a;
-      curve = value * 1.5;
+      curve = value * .15f;
     }
     else {
       auto norm_val = 2.f * value - 1.f;
@@ -50,7 +50,7 @@ public:
     }
     _t_attack_kof = 1.f / _t_attack;
     _t_decay_kof = 1.f / _t_decay;
-    _set_curve(kCRangeX2 * curve + kCMin);
+    _set_curve(curve);
   }
   
   void Trigger() {
@@ -159,10 +159,6 @@ private:
   size_t _ph_decay(float amp) {
     return static_cast<size_t>(roundf(_t_decay * (1 - amp) / (amp * _curve_kof + 1)));
   }
-
-  static constexpr float kCMin = 0.f;
-  static constexpr float kCRangeX2 = .1f;
-
   
   float _out;
   float _curve_kof;
