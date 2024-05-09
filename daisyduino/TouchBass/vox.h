@@ -85,7 +85,7 @@ float Process() {
         out = osc2_out * env;
         break;
       case Osc2Mode::am: 
-        osc1_amp *= (1.f - _osc2_amount * (1 - osc2_out)) * 1.5; 
+        osc1_amp *= (1.f - _osc2_amount * (1 - osc2_out)) * 1.6 + 0.9 * _osc2_amount;
         osc2_base_freq = 5.f;
         break;
     }
