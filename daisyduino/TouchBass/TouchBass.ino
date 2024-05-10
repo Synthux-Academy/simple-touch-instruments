@@ -69,7 +69,7 @@ static const int clk_pin = D(S31);
 //////////////////////// MODULES ///////////////////////////
 
 static std::array<Vox, kVoxCount> vox;
-static Driver<kVoxCount> driver;
+static Driver<kVoxCount, Vox> driver;
 static Scale scale;
 static simpletouch::Touch touch;
 static Clock<kPPQN> clck;
@@ -287,6 +287,8 @@ void setup() {
   float sample_rate = DAISY.AudioSampleRate();
   float buffer_size = DAISY.AudioBlockSize();
 
+  Serial.begin(9600);
+
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
 
@@ -303,6 +305,7 @@ void setup() {
   
   driver.SetOnNoteOn(OnDriverNoteOn);
   driver.SetOnNoteOff(OnDriverNoteOff);
+  driver.SetVoices(&vox);
 
   flt_freq.Init(1.f);
   flt_reso.Init(.2f);
@@ -363,6 +366,8 @@ void loop() {
   arp.SetDirection(ArpDirection::fwd);
   arp.SetRandChance(0);
   arp.SetAsPlayed(true);
+
+  driver.SetIsStealing(!arp_on);
 
   auto osc1_value = osc1_mult_knob.Process();
   auto osc1_mult = scale.TransMult(osc_1_freq.Value());

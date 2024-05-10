@@ -1,3 +1,4 @@
+#include "WSerial.h"
 #pragma once
 #include <algorithm>
 

@@ -3,6 +3,7 @@
 #include "DaisyDSP.h"
 #include "env.h"
 
+
 namespace synthux {
 
 class Vox {
@@ -73,10 +74,14 @@ void SetEnvelopeMode(const Envelope::Mode mode) {
   _env.SetMode(mode);
 } 
 
+bool IsRunning() {
+  return _env.IsRunning();
+}
+
 float Process() {
   auto out = 0.f;
   auto env = _env.Process();
-  if (_env.IsRunning()) {
+  if (IsRunning()) {
     auto osc1_amp = env;
     auto osc2_out = _osc2.Process() * _osc2_amount;
     auto osc2_base_freq = _base_freq;
