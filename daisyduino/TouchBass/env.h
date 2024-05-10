@@ -20,7 +20,7 @@ public:
   {}
 
   void Init(const float sample_rate) {
-    _t_range_2x = 2.0 * 3.f * sample_rate; // 3s. Multiplication by 2 is done for optimisation
+    _t_range_2x = 2.0 * 4.f * sample_rate; // 4s. Multiplication by 2 is done for optimisation
     _t_min_attack = .01f * sample_rate; // 20 ms
     _t_min_decay_a = .4f * sample_rate; // 400 ms
     _t_min_decay_b = .01f * sample_rate; // 10 ms
@@ -46,7 +46,7 @@ public:
     else {
       auto norm_val = 2.f * value - 1.f;
       _t_attack = static_cast<size_t>(_t_range_2x * norm_val * norm_val) + _t_min_attack;
-      _t_decay = static_cast<size_t>(_t_range_2x * (1.f - value)) + _t_min_decay_b;
+      _t_decay = static_cast<size_t>(_t_range_2x * (1.f - value * value)) + _t_min_decay_b;
       curve = .5f;
     }
     _t_attack_kof = 1.f / _t_attack;
