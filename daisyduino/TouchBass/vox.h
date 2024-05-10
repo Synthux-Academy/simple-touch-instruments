@@ -104,7 +104,7 @@ float Process() {
     _pending_freq = 0;
     _env.Trigger();
   }
-  return out;
+  return out * .75f;
 }
 
 private:

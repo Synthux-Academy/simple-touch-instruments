@@ -268,7 +268,7 @@ void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
     output = 0;
     for (auto k = 0; k < kVoxCount; k++) {
-      output += vox[k].Process() * .6f;
+      output += vox[k].Process() * .5f;
     }
     bus[0] = bus[1] = flt.Process(output);
     xfade.Process(0, 0, bus[0], bus[1], verb_in[0], verb_in[1]);
