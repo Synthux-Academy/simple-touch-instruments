@@ -60,8 +60,6 @@ static MValue m_in_level;
 static MValue m_in_thres;
 static MValue m_verb;
 
-static int speed_mode_switch = D(S07);
-
 static simpletouch::Touch touch;
 
 uint8_t layer_pads[kLayerCount] = { 3, 5, 7 };
@@ -180,8 +178,6 @@ void AudioCallback(float **in, float **out, size_t size) {
 void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   float sample_rate = DAISY.get_samplerate();
-  
-  Serial.begin(9600);
 
   touch.Init();
   touch.SetOnTouch(onTouch);
@@ -205,7 +201,6 @@ void setup() {
   m_in_level.Init(1.0);
   m_in_thres.Init(0.0056); //~ -45dB
 
-  pinMode(speed_mode_switch, INPUT_PULLUP);
   pinMode(LED_BUILTIN, OUTPUT);
 
   DAISY.begin(AudioCallback);

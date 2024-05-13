@@ -42,11 +42,15 @@ enum Param {
   kParamCount
 };
 
+static AKnob tempo_knob(A(S30));
 static AKnob bd_knob(A(S32));
 static AKnob sd_knob(A(S34));
 static AKnob hh_knob(A(S33));
 static AKnob verb_knob(A(S35));
+static AKnob swing_knob(A(S36));
 static array<AKnob<>, kDrumCount> drum_knobs = { bd_knob, sd_knob, hh_knob };
+
+static OnOffOn knob_mode_switch(D(S09), D(S10));
 
 ///////////////////////////////////////
 // Every drum has 3 parameters... /////
@@ -61,11 +65,6 @@ static array<MValue, kParamCount> hh_val;
 // ]
 static array<array<MValue, kParamCount>, kDrumCount> m_val = { bd_val, sd_val, hh_val };
 ////////////////////////////////////////
-
-static AKnob tempo_knob(A(S30));
-static AKnob swing_knob(A(S36));
-
-static OnOffOn knob_mode_switch(D(S09), D(S10));
 
 static Touch touch;
 

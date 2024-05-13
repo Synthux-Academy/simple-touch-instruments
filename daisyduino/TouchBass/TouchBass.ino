@@ -287,8 +287,6 @@ void setup() {
   float sample_rate = DAISY.AudioSampleRate();
   float buffer_size = DAISY.AudioBlockSize();
 
-  Serial.begin(9600);
-
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
 

@@ -140,8 +140,6 @@ void setup() {
   auto sample_rate = DAISY.AudioSampleRate();
   auto buffer_size = DAISY.AudioBlockSize();
 
-  //Serial.begin(9600);
-
   // INIT TOUCH SENSOR
   touch.Init();
   touch.SetOnTouch(OnTouch);

@@ -1,4 +1,3 @@
-#include "WSerial.h"
 #pragma once
 
 #include "Adafruit_MPR121.h"

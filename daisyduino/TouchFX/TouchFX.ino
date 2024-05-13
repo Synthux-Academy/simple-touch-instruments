@@ -189,8 +189,6 @@ void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   auto sample_rate = DAISY.get_samplerate();
 
-  Serial.begin(9600);
-
   // INIT TOUCH SENSOR
   touch.Init();
   touch.SetOnTouch(OnTouch);

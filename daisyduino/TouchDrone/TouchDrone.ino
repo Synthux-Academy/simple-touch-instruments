@@ -57,8 +57,6 @@ void setup() {
   DAISY.init(DAISY_SEED, AUDIO_SR_48K);
   auto sampleRate = DAISY.get_samplerate();
 
-  //Serial.begin(9600);
-
   envelope.Init(sampleRate);
   terminal.Init();
   filter.Init(sampleRate);
