@@ -115,10 +115,8 @@ float humanized_note(uint8_t note) {
   }
   else {
     if (note_dice < human_note_chance) freq = scale.Random();
-    if (octave_dice < 5) return freq * 4.f;
-    else if (octave_dice < 20) return freq * 2.f;
+    if (octave_dice < 20) return freq * 2.f;
     else if (octave_dice > 80) return freq * .5f;
-    else if (octave_dice > 95) return freq * .25f;
     else return freq; //60% of freq passes through unchanged
   }
 }
