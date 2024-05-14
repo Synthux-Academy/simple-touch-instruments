@@ -24,4 +24,3 @@ Download the [Binary file](https://github.com/Synthux-Academy/simple-touch-instr
 - P10 + P0/P02 - arpeggiator speed +/-
 - P11 + P0/P02 - scale (one of the three)
 - P03...P09 - notes
-- 
