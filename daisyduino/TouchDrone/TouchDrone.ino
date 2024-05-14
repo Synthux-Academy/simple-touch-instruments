@@ -47,7 +47,7 @@ void AudioCallback(float **in, float **out, size_t size) {
     float output = 0;
     if (envelope.IsRunning() || gate) {
       for (auto& v: vox) output += v.Process(); 
-      output = filter.Process(output) * envelope.Process(gate) * 0.8;
+      output = filter.Process(output) * envelope.Process(gate) * 0.75;
     }
     out[0][i] = out[1][i] = output;
   }
