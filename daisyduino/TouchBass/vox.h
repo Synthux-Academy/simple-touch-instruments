@@ -24,9 +24,9 @@ Vox():
 void Init(float sample_rate) {
   _sample_rate = sample_rate;
   _osc1.Init(sample_rate);
-  _osc1.SetWaveform(Oscillator::WAVE_POLYBLEP_SAW);
+  _osc1.SetWaveform(Oscillator::WAVE_SAW);
   _osc2.Init(sample_rate);
-  _osc2.SetWaveform(Oscillator::WAVE_POLYBLEP_TRI);
+  _osc2.SetWaveform(Oscillator::WAVE_TRI);
   _env.Init(sample_rate);
 }
 
@@ -74,14 +74,10 @@ void SetEnvelopeMode(const Envelope::Mode mode) {
   _env.SetMode(mode);
 } 
 
-bool IsRunning() {
-  return _env.IsRunning();
-}
-
 float Process() {
   auto out = 0.f;
   auto env = _env.Process();
-  if (IsRunning()) {
+  if (_env.IsRunning()) {
     auto osc1_amp = env;
     auto osc2_out = _osc2.Process() * _osc2_amount;
     auto osc2_base_freq = _base_freq;

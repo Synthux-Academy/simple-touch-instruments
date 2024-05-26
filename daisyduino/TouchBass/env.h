@@ -72,13 +72,13 @@ public:
   void Release() {
     switch (_stage) {
       case Stage::attack:
-        _stage = Stage::decay;
         _phase = _ph_decay(_out);
+        _stage = Stage::decay;
         break;
 
       case Stage::sustain:
-        _stage = Stage::decay;
         _phase = 0;
+        _stage = Stage::decay;
         break;
 
       default: break;
@@ -95,9 +95,12 @@ public:
       case Stage::attack: 
         ph = static_cast<float>(_phase) * _t_attack_kof;
         _out = _amp_attack(ph);
-        if (_phase ++ >= _t_attack) {
+        if (_phase >= _t_attack) {
           _stage = _mode == Mode::AR ? Stage::decay : Stage::sustain;
           _phase = 0;
+        }
+        else {
+          _phase ++;
         }
         break;
 
@@ -108,17 +111,23 @@ public:
       case Stage::decay:
         ph = static_cast<float>(_phase) * _t_decay_kof;
         _out = _amp_decay(ph);
-        if (_phase ++ >= _t_decay) {
+        if (_phase >= _t_decay) {
           _stage = Stage::idle;
           _phase = 0;
+        }
+        else {
+          _phase ++;
         }
         break;
 
       case Stage::reset:
         _out = _t_reset_out - static_cast<float>(_phase) * _t_reset_kof;
-        if (_phase ++ >= _t_reset) {
+        if (_phase >= _t_reset) {
           _stage = Stage::idle;
           _phase = 0;
+        }
+        else {
+          _phase ++;
         }
         break;
     }

@@ -69,7 +69,7 @@ static const int clk_pin = D(S31);
 //////////////////////// MODULES ///////////////////////////
 
 static std::array<Vox, kVoxCount> vox;
-static Driver<kVoxCount, Vox> driver;
+static Driver<kVoxCount> driver;
 static Scale scale;
 static simpletouch::Touch touch;
 static Clock<kPPQN> clck;
@@ -205,6 +205,7 @@ void OnPadRelease(uint16_t pad) {
   auto num = pad - kFirstNotePad;
   if (!arp_on) {
     driver.NoteOff(num);
+    hold[num] = false;
     return;
   }
   if (!latch) { 
@@ -220,7 +221,7 @@ void Reset() {
   trig.Reset();
   ptn.Reset();
   arp.Clear();
-  driver.Reset();
+  driver.AllOff();
 }
 
 ////////////////////////////////////////////////////////////
@@ -240,14 +241,14 @@ void OnClockTick() {
 
 ////////////////////////////////////////////////////////////
 //////////////////// DRIVER CALLBACKS ///////////////////////
-void OnDriverNoteOn(uint8_t vox_idx, uint8_t num, bool is_stealing) {
+void OnDriverNoteOn(uint8_t vox_idx, uint8_t num, bool retrigger) {
   auto h_env = arp_on ? humanized_envelope(env, ptn.Length()) : env;
   auto freq = arp_on ? humanized_note(num) : scale.FreqAt(num);
   auto& v = vox[vox_idx];
   flt.SetEnvelope(h_env);
-  flt.Trigger(driver.ActiveCount() == 1);
+  flt.Trigger(retrigger);
   v.SetEnvelope(h_env);
-  v.NoteOn(freq, 1.f, driver.ActiveCount() != 1);
+  v.NoteOn(freq, 1.f, retrigger);
 }
 
 void OnDriverNoteOff(uint8_t vox_idx) {
@@ -287,6 +288,8 @@ void setup() {
   float sample_rate = DAISY.AudioSampleRate();
   float buffer_size = DAISY.AudioBlockSize();
 
+  Serial.begin(9600);
+
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
 
@@ -303,7 +306,6 @@ void setup() {
   
   driver.SetOnNoteOn(OnDriverNoteOn);
   driver.SetOnNoteOff(OnDriverNoteOff);
-  driver.SetVoices(&vox);
 
   flt_freq.Init(1.f);
   flt_reso.Init(.2f);
@@ -346,7 +348,7 @@ void loop() {
   auto arp_mode_value = arp_mode_switch.Value();
   auto new_arp_on = arp_mode_value > 0;
   if (new_arp_on != arp_on) {
-    driver.Reset();
+    driver.AllOff();
   }
   arp_on = new_arp_on;
   auto new_latch = arp_mode_value > 1;
@@ -412,7 +414,7 @@ void loop() {
   flt_freq.SetActive(!is_to_touched && !is_ch_touched, flt_value);
   flt_reso.SetActive(is_to_touched, flt_value);
   flt_env_amount.SetActive(is_ch_touched, flt_value);
-  flt.SetEnvelopeMode(arp_on ? Envelope::Mode::AR : Envelope::Mode::ASR);
+  flt.SetEnvelopeMode(env_mode);
   if (is_to_touched) {
     verb_value.Process(human_verb_knob_value);
     flt_reso.Process(flt_value);

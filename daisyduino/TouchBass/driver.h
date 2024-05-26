@@ -1,65 +1,43 @@
-#include "WSerial.h"
-#pragma once;
+#pragma once
 #include <array>
 
 namespace synthux {
 
-template<uint8_t max_vox_count, class V>
+template<uint8_t max_vox_count>
 class Driver {
 public:
   Driver():
-    _note_on_count { 0 },
-    _is_stealing  { false },
-    _vox_count    { max_vox_count } {
-    Reset();
+    _note_on_count  { 0 },
+    _is_stealing    { false },
+    _vox_count      { max_vox_count } {
+    for (uint8_t i = 0; i < _vox_count; i++) {
+      _notes[i] = kNone;
+      _queue[i] = i;
+      _active[i] = false;
+    }
   }
+
+void NoteOn(uint8_t note) {
+  if (_vox_count == 1) {
+      _notes[0] = note;
+      _queue[0] = 0;
+      _note_on_count = 1;
+      _on_note_on(0, note, false);
+      return;
+  }
+  auto vox = _vox_for_note(note);
+  _notes[vox.index] = note;
+  _active[vox.index] = true;
+  _note_on_count++;
+  _on_note_on(vox.index, note, vox.retrigger);
+}
+
+void NoteOff(uint8_t note) {
+  _release_note(note);
+}
 
 void SetIsStealing(const bool value) {
   _is_stealing = value;
-}
-
-void NoteOn(uint8_t num) {
-  if (_vox_count == 1) {
-      _notes[0] = num;
-      _order[0] = num;
-      _note_on_count = 1;
-      _on_note_on(0, num, false);
-      return;
-  }
-
-  auto vox_idx = kNone;  
-  for (auto i = 0; i < _vox_count; i++) {
-    if (_is_stealing) {
-      if (!(*_voices)[i].IsRunning()) {
-        vox_idx = i;
-        break;
-      }
-    }
-    else if (_notes[i] == kNone) {
-      vox_idx = i;
-      break;
-    }
-  }
-
-  auto retrigger = false;
-  if (vox_idx == kNone) {
-    retrigger = true;
-    vox_idx = (_note_on_count > 0) ? _release_at(0) : 0;
-  }
-
-  _notes[vox_idx] = num;
-  _order[_note_on_count] = num;
-  _note_on_count++;
-  _on_note_on(vox_idx, num, retrigger);
-} 
-
-void NoteOff(uint8_t num) {
-  for (auto i = 0; i < _vox_count; i++) {
-    if (_order[i] == num) {
-      _release_at(i);
-      break;
-    }
-  }
 }
 
 bool IsMono() {
@@ -67,12 +45,12 @@ bool IsMono() {
 }
 
 void SetMono() {
-  Reset();
+  AllOff();
   _vox_count = 1;
 }
 
 void SetPoly() {
-  Reset();
+  AllOff();
   _vox_count = max_vox_count;
 }
 
@@ -80,11 +58,10 @@ uint8_t ActiveCount() {
   return _note_on_count;
 }
 
-void Reset() {
-  for (auto i = 0; i < _note_on_count; i++) _release_at(i);
-  _notes.fill(kNone);
-  _order.fill(kNone);
-  _note_on_count = 0;
+void AllOff() {
+    for (auto i = 0; i < _vox_count; i++) {
+        if (_active[i]) _release_note(_notes[i]);
+    }
 }
 
 void SetOnNoteOn(void(*on_note_on)(uint8_t, uint8_t, bool)) {
@@ -95,29 +72,68 @@ void SetOnNoteOff(void(*on_note_off)(uint8_t vox)) {
   _on_note_off = on_note_off;
 }
 
-void SetVoices(std::array<V, max_vox_count>* voices) {
-  _voices = voices;
-}
-
 private:
-  uint8_t _release_at(uint8_t index) {
-    uint8_t vox_idx = 0;
-    auto note = _order[index];
+  struct Voice {
+    uint8_t index;
+    bool retrigger;
+  };
+
+  Voice _vox_for_note(uint8_t note) {
+      Voice vox;
+      uint8_t queue_idx = kNone;
+      uint8_t i;
+    
+      // If one of the voice plays (or played) this note
+      // this voice going to be chosen.
+      for (i = 0; i < _vox_count; i++) {
+          if (_notes[_queue[i]] != note) continue;
+          vox.retrigger = false;
+          queue_idx = i;
+          break;
+      }
+
+      // If it's different note, look for the free one.
+      if (queue_idx == kNone) {
+        // Find free voice enumerating in the queue order
+        for (i = 0; i < _vox_count; i++) {
+          if (!_active[_queue[i]]) {
+              queue_idx = i;
+              vox.retrigger = true;
+              break;
+          }
+        }
+      }
+
+      // If there's no voice found in previous
+      // steps, take the first in the queue
+      if (queue_idx == kNone) {
+        queue_idx = 0;
+        vox.retrigger = true;
+      }
+
+    // Take the voice from the queue.
+    vox.index = _queue[queue_idx];
+
+    // Move the taken voice to the end of the queue.
+    for (i = queue_idx; i < _vox_count - 1; i++) {
+      _queue[i] = _queue[i+1];
+    }
+    _queue[i] = vox.index;
+
+    //
+    return vox;
+  }
+
+  void _release_note(uint8_t note) {
     uint8_t i;
     for (i = 0; i < _vox_count; i++) {
       if (_notes[i] == note) {
-        _note_on_count--;
+        _active[i] = false;
+        _note_on_count --;
         _on_note_off(i);
-        _notes[i] = kNone;
-        vox_idx = i;
         break;
       }
     }
-    for (i = index; i < _vox_count - 1; i++) {
-      _order[i] = _order[i+1];
-    }
-    _order[i] = kNone;
-    return vox_idx;
   }
 
   static constexpr uint8_t kNone = 0xff;
@@ -125,13 +141,13 @@ private:
   void(*_on_note_on)(uint8_t vox, uint8_t num, bool steal);
   void(*_on_note_off)(uint8_t vox);
 
-  std::array<V, max_vox_count>* _voices;
+  std::array<bool, max_vox_count> _active;
   std::array<uint8_t, max_vox_count> _notes;
-  std::array<uint8_t, max_vox_count> _order;
-  
+  std::array<uint8_t, max_vox_count> _queue;
+
   uint8_t _note_on_count;
   uint8_t _vox_count;
   bool _is_stealing;
-  
+
 };
 };
