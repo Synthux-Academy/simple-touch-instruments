@@ -1,4 +1,6 @@
 #pragma once
+#include <functional>
+#include <random>
 
 namespace synthux {
 
@@ -14,6 +16,7 @@ namespace synthux {
       _on_note_on       { nullptr },
       _on_note_off      { nullptr },
       _direction        { ArpDirection::fwd },
+      _dice             { std::uniform_int_distribution<uint8_t>(0, 100) },
       _rand_chance      { 0 },
       _played_idx       { 0 },
       _as_played        { false },
@@ -22,7 +25,7 @@ namespace synthux {
       _bottom_idx       { 0 },
       _current_idx      { 0 },
       _pulse_counter    { 0 },
-      _size             { 0 } 
+      _size             { 0 }
       {
         _SetMaxNoteLength();
         Clear();
@@ -90,12 +93,12 @@ namespace synthux {
     }
 
     // Register note on callback
-    void SetOnNoteOn(void(*on_note_on)(uint8_t num, uint8_t vel)) {
+    void SetOnNoteOn(std::function<void(uint8_t num, uint8_t vel)> on_note_on) {
       _on_note_on = on_note_on;
     }
 
     // Register note off callback
-    void SetOnNoteOff(void(*on_note_off)(uint8_t num)) {
+    void SetOnNoteOff(std::function<void(uint8_t num)> on_note_off) {
       _on_note_off = on_note_off;
     }
 
@@ -136,10 +139,10 @@ namespace synthux {
       }
 
       // Randomize note
-      if (_rand_chance > 0.05 && _rand_chance < 0.95) {
-        auto rnd = static_cast<float>(random(0, 100)) / 100.f;  
-        if (rnd <= _rand_chance) {
-          note_idx = _input_order[random(0, _size - 2)];
+      if (_rand_chance > 5 && _rand_chance < 95) {
+        if (_dice(_rand_engine) <= _rand_chance) {
+          std::uniform_int_distribution<uint8_t> _note_distribution(0, _size - 2);
+          note_idx = _input_order[_note_distribution(_rand_engine)];
         }
      }
 
@@ -239,14 +242,16 @@ namespace synthux {
     static const uint8_t kEmpty    = 0xfe;
     static const uint8_t kUnlinked = 0xfd;
 
-    void(*_on_note_on)(uint8_t num, uint8_t vel);
-    void(*_on_note_off)(uint8_t num);
+    std::function<void(uint8_t num, uint8_t vel)> _on_note_on;
+    std::function<void(uint8_t num)> _on_note_off;
 
     Note _notes[note_count + 1];
     uint8_t _input_order[note_count];
 
     ArpDirection _direction = ArpDirection::fwd;
-    float _rand_chance;
+    std::default_random_engine _rand_engine;
+    std::uniform_int_distribution<uint8_t> _dice;
+    uint8_t _rand_chance;
     uint8_t _played_idx;
     bool _as_played;
     

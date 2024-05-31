@@ -3,7 +3,6 @@
 #include "DaisyDSP.h"
 #include "env.h"
 
-
 namespace synthux {
 
 class Vox {

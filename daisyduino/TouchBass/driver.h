@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <functional>
 
 namespace synthux {
 
@@ -8,7 +9,6 @@ class Driver {
 public:
   Driver():
     _note_on_count  { 0 },
-    _is_stealing    { false },
     _vox_count      { max_vox_count } {
     for (uint8_t i = 0; i < _vox_count; i++) {
       _notes[i] = kNone;
@@ -36,10 +36,6 @@ void NoteOff(uint8_t note) {
   _release_note(note);
 }
 
-void SetIsStealing(const bool value) {
-  _is_stealing = value;
-}
-
 bool IsMono() {
   return _vox_count == 1;
 }
@@ -54,8 +50,15 @@ void SetPoly() {
   _vox_count = max_vox_count;
 }
 
-uint8_t ActiveCount() {
-  return _note_on_count;
+bool IsNoteOn(const uint8_t note) {
+  for (auto i = 0; i < _vox_count; i++) {
+    if (_notes[i] == note && _active[i]) return true;
+  }
+  return false;
+}
+
+uint8_t HasNotes() {
+  return _note_on_count > 0;
 }
 
 void AllOff() {
@@ -64,11 +67,11 @@ void AllOff() {
     }
 }
 
-void SetOnNoteOn(void(*on_note_on)(uint8_t, uint8_t, bool)) {
+void SetOnNoteOn(std::function<void(uint8_t, uint8_t, bool)> on_note_on) {
   _on_note_on = on_note_on;
 }
 
-void SetOnNoteOff(void(*on_note_off)(uint8_t vox)) {
+void SetOnNoteOff(std::function<void(uint8_t)> on_note_off) {
   _on_note_off = on_note_off;
 }
 
@@ -138,8 +141,8 @@ private:
 
   static constexpr uint8_t kNone = 0xff;
 
-  void(*_on_note_on)(uint8_t vox, uint8_t num, bool steal);
-  void(*_on_note_off)(uint8_t vox);
+  std::function<void(uint8_t vox, uint8_t num, bool steal)> _on_note_on;
+  std::function<void(uint8_t vox)> _on_note_off;
 
   std::array<bool, max_vox_count> _active;
   std::array<uint8_t, max_vox_count> _notes;
@@ -147,7 +150,6 @@ private:
 
   uint8_t _note_on_count;
   uint8_t _vox_count;
-  bool _is_stealing;
 
 };
 };

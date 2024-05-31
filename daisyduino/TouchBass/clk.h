@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <stdint.h>
 
 namespace synthux {
@@ -49,7 +50,7 @@ public:
         emit_ticks();
     }
 
-    void SetOnTick(void(*on_tick)()) {
+    void SetOnTick(std::function<void()> on_tick) {
       _on_tick = on_tick;
     }
 
@@ -202,7 +203,7 @@ private:
         return static_cast<uint32_t>(60.f * 1e6 / tempo);
     }
 
-    void(*_on_tick)();
+    std::function<void()> _on_tick;
 
     bool _is_running;
     bool _is_about_to_run;
