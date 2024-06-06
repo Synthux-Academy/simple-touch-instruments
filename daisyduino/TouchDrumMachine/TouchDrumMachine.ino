@@ -70,14 +70,12 @@ static Touch touch;
 
 static const uint16_t kClickPad = 0;
 static const uint16_t kPlayStopPad = 2;
-
-static const uint16_t kBDPad = 3;
-static const uint16_t kSDPad = 4;
-static const uint16_t kHHPad = 8;
-
-static const uint16_t kStrokePadA = 6;
-static const uint16_t kStrokePadB = 7;
-
+static const uint16_t kBDPadA = 3;
+static const uint16_t kBDPadB = 4;
+static const uint16_t kSDPadA = 6;
+static const uint16_t kSDPadB = 7;
+static const uint16_t kHHPadA = 8;
+static const uint16_t kHHPadB = 9;
 static const uint16_t kRecordPad = 10;
 static const uint16_t kClearingPad = 11;
 
@@ -130,9 +128,6 @@ auto blink = false;
 auto is_to_touched = false;
 auto is_ch_touched = false;
 auto is_recording = false;
-auto is_bd_touched = false;
-auto is_sd_touched = false;
-auto is_hh_touched = false;
 auto is_clearing = false;
 
 ///////////////////////////////////////////////////////////////
@@ -140,49 +135,11 @@ auto is_clearing = false;
 void OnPadTouch(uint16_t pad) {
   switch (pad) {
     case kPlayStopPad: ToggleClock(); break;
-    case kStrokePadA:
-      if (is_bd_touched && !is_clearing) { 
-        tones[BD] = tonesA[BD]; 
-        bd_track.HitStroke(tones[BD]); 
-        trig[BD] = true; 
-      }
-      if (is_sd_touched && !is_clearing) { 
-        tones[SD] = tonesA[SD]; 
-        sd_track.HitStroke(tones[SD]); 
-        trig[SD] = true; 
-      }
-      if (is_hh_touched && !is_clearing) { 
-        tones[HH] = tonesA[HH]; 
-        hh_track.HitStroke(tones[HH]); 
-        trig[HH] = true; 
-      }
-      break;
-
-    case kStrokePadB:
-      if (is_bd_touched && !is_clearing) { 
-        tones[BD] = tonesB[BD]; 
-        bd_track.HitStroke(tones[BD]); 
-        trig[BD] = true; 
-      }
-      if (is_sd_touched && !is_clearing) { 
-        tones[SD] = tonesB[SD]; 
-        sd_track.HitStroke(tones[SD]); 
-        trig[SD] = true; 
-      }
-      if (is_hh_touched && !is_clearing) { 
-        tones[HH] = tonesB[HH]; 
-        hh_track.HitStroke(tones[HH]); 
-        trig[HH] = true; 
-      }
-      break;
-    }
-    
-
-    case kBDPadA:  break;
-    case kBDPadB:  break;
-    case kSDPadA: break;
-    case kSDPadB: break;
-    case kHHPadA: break;
+    case kBDPadA: if (!is_clearing) { tones[BD] = tonesA[BD]; bd_track.HitStroke(tones[BD]); trig[BD] = true; } break;
+    case kBDPadB: if (!is_clearing) { tones[BD] = tonesB[BD]; bd_track.HitStroke(tones[BD]); trig[BD] = true; } break;
+    case kSDPadA: if (!is_clearing) { tones[SD] = tonesA[SD]; sd_track.HitStroke(tones[SD]); trig[SD] = true; } break;
+    case kSDPadB: if (!is_clearing) { tones[SD] = tonesB[SD]; sd_track.HitStroke(tones[SD]); trig[SD] = true; } break;
+    case kHHPadA: if (!is_clearing) { tones[HH] = tonesA[HH]; hh_track.HitStroke(tones[HH]); trig[HH] = true; } break;
     case kHHPadB: if (!is_clearing) { tones[HH] = tonesB[HH]; hh_track.HitStroke(tones[HH]); trig[HH] = true; } break;
     case kRecordPad: ToggleRecording(); break;
     case kClickPad: ToggleClick(); break;
