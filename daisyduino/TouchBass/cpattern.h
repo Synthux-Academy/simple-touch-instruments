@@ -29,7 +29,7 @@ public:
     }
 
     void SetOnsets(const float frac_onsets) {
-        auto onsets { static_cast<uint8_t>(round(frac_onsets * _max_onsets)) };
+        auto onsets { static_cast<uint8_t>(round(frac_onsets * (_max_onsets - 1)) + 1) };
         if (onsets == _onsets) return;
         _onsets = onsets;
 
