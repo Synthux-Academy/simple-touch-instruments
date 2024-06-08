@@ -1,7 +1,6 @@
 // SYNTHUX ACADEMY /////////////////////////////////////////
 // DRUM MACHINE ////////////////////////////////////////////
 #include "simple-daisy-touch.h"
-#include "STM32TimerInterrupt.h"
 #include "aknob.h"
 #include "onoffon.h"
 #include "mvalue.h"
@@ -92,7 +91,6 @@ static const int clock_pin = D(S31);
 ///////////////////////// MODULES /////////////////////////////
 static constexpr size_t kPPQN = 48;
 
-STM32Timer clock_timer(TIM2);
 static SyncClock<kPPQN> clck;
 static Trigger trigger(kPPQN, Every::_32th);
 
@@ -176,15 +174,6 @@ void ToggleClick() {
 
 ///////////////////////////////////////////////////////////////
 ////////////////////// CLOCK CALLBACKS ////////////////////////
-void onClockTimer() {
-  //Advance clock
-  clck.Tick();
-
-  #ifdef EXTERNAL_SYNC
-  clck.Process(!digitalRead(clock_pin));
-  #endif
-}
-
 auto cnt = 0;
 void OnClockTick() {
   if (click_cnt-- == 0) {
@@ -211,6 +200,9 @@ float verb_in[2];
 float verb_out[2];
 float bus[2];
 void AudioCallback(float **in, float **out, size_t size) {  
+  //Advance clock
+  clck.Tick();
+
   //Set timbre
   if (trig[BD]) bd.SetTone(tones[BD]);
   if (trig[SD]) sd.SetTone(tones[SD]);
@@ -258,9 +250,6 @@ void setup() {
   float sample_rate = DAISY.AudioSampleRate();
   float buffer_size = DAISY.AudioBlockSize();
 
-  auto interval = static_cast<uint32_t>(1e6 * buffer_size / sample_rate);
-  clock_timer.attachInterruptInterval(interval, onClockTimer);
-
   clck.Init(sample_rate, buffer_size);
   clck.SetOnTick(OnClockTick);
   #ifdef EXTERNAL_SYNC
@@ -301,6 +290,10 @@ uint8_t func_a_val, func_b_val, func;
 void loop() {
   tempo = tempo_knob.Process();
   clck.SetTempo(tempo);
+
+  #ifdef EXTERNAL_SYNC
+  clck.Process(!digitalRead(clock_pin));
+  #endif
 
   trigger.SetSwing(swing_knob.Process());
 
