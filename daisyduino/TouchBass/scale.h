@@ -83,10 +83,13 @@ namespace synthux {
       static constexpr uint8_t kScaleSize = 8;
 
       std::array<float, kScaleSize> _scale;
-      std::array<std::array<float, kScaleSize>, 3> _scales = {{
+      std::array<std::array<float, kScaleSize>, 6> _scales = {{
         { 130.81,	196.00,	233.08,	261.63,	293.66,	311.13,	349.23,	392.00 }, // Amara D3, A3, C4, D4, E4, F4, G4, A4, C5. | C3, G3, A#3, C4, D4, D#4, F4, G4
         { 130.81,	164.81,	174.61,	196.00,	220.00,	261.63,	329.63,	349.23 }, // Oxalis F3, A3, Bb3, C4, D4, F4, A4, Bb4, C5 | C3, E3, F3, G3, A3, C4, E4, F4
-        { 130.81,	146.83,	155.56,	196.00,	233.08,	261.63,	293.66,	311.13 } // Pigmy F3, G3, Ab3, C4, Eb4, F4, G4, Ab4, C5 | C3, D3, D#3, G3, Bb3, C4, D4, D#4
+        { 130.81,	146.83,	155.56,	196.00,	233.08,	261.63,	293.66,	311.13 }, // Pigmy F3, G3, Ab3, C4, Eb4, F4, G4, Ab4, C5 | C3, D3, D#3, G3, Bb3, C4, D4, D#4
+        { 130.81, 146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63 }, // C major C3, D3, E3, F3, G3, A3, B3, C4
+        { 130.81, 146.83, 155.56, 174.61, 196.00, 207.65, 233.08, 261.63 }, // C minor C3, D3, D#3, F3, G3, G#3, A#3, C4
+        { 174.61, 196.00, 207.65, 233.08, 261.63, 277.18, 311.13, 349.23 } // F minor F3, G3, G#3, A#3, C4, C#4, D#4, F4
       }};
       std::array<float, 25> _trans = { 
         0.5f, 

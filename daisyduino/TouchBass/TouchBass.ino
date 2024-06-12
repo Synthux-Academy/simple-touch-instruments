@@ -49,10 +49,10 @@ static MValue human_env_value;
 static MValue verb_value;
 
 // Unomment if you're planning using external sync
-// #define EXTERNAL_SYNC
+#define EXTERNAL_SYNC
 
 #ifdef EXTERNAL_SYNC
-static const int clk_pin = D(S31);
+static const int clk_pin = D(S43);
 #endif
 
 ////////////////////////////////////////////////////////////
