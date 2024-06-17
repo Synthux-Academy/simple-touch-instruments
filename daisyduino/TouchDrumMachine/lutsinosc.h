@@ -5,19 +5,19 @@
 namespace synthux {
 
 template<size_t size>
-static constexpr std::array<float, size> sineLUT() {
-    std::array<float, size> lut { 0 };
+struct LUTSin {
+  std::array<float, size> table;
+  constexpr LUTSin(): table() {
     for (size_t i = 0; i < size; i++) {
-        lut[i] = std::clamp(sinf(2.f * M_PI * static_cast<float>(i) / static_cast<float>(size)), -1.f, 1.f); 
+        table[i] = std::clamp(sinf(2.f * M_PI * static_cast<float>(i) / static_cast<float>(size)), -1.f, 1.f); 
     }
-    return lut;
   }
+};
 
-template<size_t size = 512>
 class LUTSinOsc {
 public:
     LUTSinOsc():
-    _f_kof        { 0 },
+    _freq_kof     { 0 },
     _phase        { 0 },
     _phase_delta  { 0 }
     {}
@@ -25,11 +25,11 @@ public:
     ~LUTSinOsc() {}
 
     void Init(float sample_rate) {
-        _f_kof = static_cast<float>(_lut.size()) / sample_rate;
+      _freq_kof = static_cast<float>(kSize) / sample_rate;
     }
 
-    void SetFreq(float freq) {
-        _phase_delta = freq * _f_kof;
+    void SetFreq(const float freq) {
+        _phase_delta = freq * _freq_kof;
     }
 
     void Reset() {
@@ -37,14 +37,18 @@ public:
     }
 
     float Process() {
+      //Do linear interpollation a + k * (b - a)
       auto _int_phase = static_cast<size_t>(_phase);
       auto _frac_phase = _phase - _int_phase;
-      auto _next_phase = (_int_phase + 1);
-      if (_next_phase >= _lut.size()) _next_phase -= _lut.size();
-      auto s = _lut[_int_phase] + _frac_phase * (_lut[_next_phase] - _lut[_int_phase]);
+      auto _next_phase = _int_phase + 1;
+      while (_next_phase >= kSize) _next_phase -= kSize;
+      auto sample = _lut.table[_int_phase] + _frac_phase * (_lut.table[_next_phase] - _lut.table[_int_phase]);
+
+      //Advance phase
       _phase += _phase_delta;
-      while (_phase >= _lut.size()) _phase -= (_lut.size());
-      return s;
+      while (_phase >= kSize) _phase -= kSize;
+      
+      return sample;
     }
 
 private:
@@ -53,10 +57,12 @@ private:
     LUTSinOsc& operator=(const LUTSinOsc &other) = delete;
     LUTSinOsc& operator=(LUTSinOsc &&other) = delete;
 
-    float _f_kof;
+    float _freq_kof;
     float _phase;
     float _phase_delta;
-    static constexpr std::array<float, size> _lut = { sineLUT<size>() };
+
+    static constexpr size_t kSize = 512;
+    static constexpr LUTSin<kSize> _lut = LUTSin<kSize>();
 };
 
 };
