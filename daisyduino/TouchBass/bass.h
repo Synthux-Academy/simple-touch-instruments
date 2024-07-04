@@ -141,7 +141,8 @@ public:
   }
 
   void PrevScale() {
-    _scale_index = std::max(static_cast<uint8_t>(0), --_scale_index);
+    if (_scale_index == 0) return;
+    _scale_index--;
     _scale.SetScaleIndex(_scale_index);
   }
 
