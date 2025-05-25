@@ -41,8 +41,8 @@ public:
   _tempo              { .45f },
   _env                { 0.f },
   _human_env_kof      { 0.f },
-  _human_env_chance   { 0.f },
-  _human_note_chance  { 0.f },
+  _human_env_chance   { 0 },
+  _human_note_chance  { 0 },
   _scale_index        { 0 },
   _is_arp_on          { false },
   _is_latched         { false }
