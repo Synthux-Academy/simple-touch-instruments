@@ -48,11 +48,17 @@ static MValue osc_1_shape;
 static MValue human_env_value;
 static MValue verb_value;
 
-// Unomment if you're planning using external sync
+// Uncomment if you're planning using external sync (mono jack - with clock signal only)
 // #define EXTERNAL_SYNC
+// Uncomment if you're planning using external sync24 (with stereo jack - clock and start/stop signals)
+#define EXTERNAL_SYNC24
 
 #ifdef EXTERNAL_SYNC
-static const int clk_pin = D(S31);
+static const int clk_pin = D(S43);
+#endif
+#ifdef EXTERNAL_SYNC24
+static const int clk_pin = D(S43);
+static const int clk_start_pin = D(S42);
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -123,6 +129,10 @@ void setup() {
   #ifdef EXTERNAL_SYNC
   pinMode(clk_pin, INPUT);
   #endif
+  #ifdef EXTERNAL_SYNC24
+  pinMode(clk_pin, INPUT_PULLUP);
+  pinMode(clk_start_pin, INPUT_PULLUP);
+  #endif
 
   DAISY.begin(AudioCallback);
 }
@@ -135,15 +145,31 @@ void loop() {
   #ifdef EXTERNAL_SYNC
   bass.ProcessClockIn(!digitalRead(clk_pin));
   #endif
+  #ifdef EXTERNAL_SYNC24
+  bass.ProcessClockIn(!digitalRead(clk_pin));
+  #endif
 
   touch.Process();
 
   is_to_touched = touch.IsTouched(10);
   is_ch_touched = touch.IsTouched(11);
 
+  #ifdef EXTERNAL_SYNC24
+  auto arp_mode_value = arp_mode_switch.Value();
+  bool ext_latch_on = digitalRead(clk_start_pin) == HIGH;
+  bool ext_clk_on = digitalRead(clk_pin) == LOW;
+  if (ext_latch_on) {
+    bass.SetArpOn(arp_mode_value > 0);
+    bass.SetLatch(arp_mode_value > 1 || (arp_mode_value > 0 && ext_latch_on));
+  } else {
+    bass.SetArpOn(arp_mode_value > 0);
+    bass.SetLatch(arp_mode_value > 1);
+  }
+  #else
   auto arp_mode_value = arp_mode_switch.Value();
   bass.SetArpOn(arp_mode_value > 0);
   bass.SetLatch(arp_mode_value > 1);
+  #endif
 
   auto osc1_value = osc1_mult_knob.Process();
   osc_1_freq.SetActive(!is_to_touched, osc1_value);
