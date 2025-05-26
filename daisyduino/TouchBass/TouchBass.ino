@@ -51,12 +51,12 @@ static MValue verb_value;
 // Uncomment if you're planning using external sync (mono jack - with clock signal only)
 // #define EXTERNAL_SYNC
 // Uncomment if you're planning using external sync24 (with stereo jack - clock and start/stop signals)
-#define EXTERNAL_SYNC24
+#define EXTERNAL_SYNC_TRS
 
 #ifdef EXTERNAL_SYNC
 static const int clk_pin = D(S43);
 #endif
-#ifdef EXTERNAL_SYNC24
+#ifdef EXTERNAL_SYNC_TRS
 static const int clk_pin = D(S43);
 static const int clk_start_pin = D(S42);
 #endif
@@ -129,7 +129,7 @@ void setup() {
   #ifdef EXTERNAL_SYNC
   pinMode(clk_pin, INPUT);
   #endif
-  #ifdef EXTERNAL_SYNC24
+  #ifdef EXTERNAL_SYNC_TRS
   pinMode(clk_pin, INPUT);
   pinMode(clk_start_pin, INPUT_PULLUP);
   #endif
@@ -145,7 +145,7 @@ void loop() {
   #ifdef EXTERNAL_SYNC
   bass.ProcessClockIn(!digitalRead(clk_pin));
   #endif
-  #ifdef EXTERNAL_SYNC24
+  #ifdef EXTERNAL_SYNC_TRS
   bass.ProcessClockIn(!digitalRead(clk_pin));
   #endif
 
@@ -154,7 +154,7 @@ void loop() {
   is_to_touched = touch.IsTouched(10);
   is_ch_touched = touch.IsTouched(11);
 
-  #ifdef EXTERNAL_SYNC24
+  #ifdef EXTERNAL_SYNC_TRS
   auto arp_mode_value = arp_mode_switch.Value();
   bool ext_latch_on = digitalRead(clk_start_pin) == HIGH;
   if (ext_latch_on) {
