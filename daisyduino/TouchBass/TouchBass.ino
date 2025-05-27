@@ -51,7 +51,7 @@ static MValue verb_value;
 // Uncomment if you're planning using external sync (mono jack - with clock signal only)
 // #define EXTERNAL_SYNC
 // Uncomment if you're planning using external sync24 (with stereo jack - clock and start/stop signals)
-#define EXTERNAL_SYNC_TRS
+// #define EXTERNAL_SYNC_TRS
 
 #ifdef EXTERNAL_SYNC
 static const int clk_pin = D(S43);
