@@ -131,7 +131,7 @@ void setup() {
   #endif
   #ifdef EXTERNAL_SYNC_TRS
   pinMode(clk_pin, INPUT);
-  pinMode(clk_start_pin, INPUT_PULLUP);
+  pinMode(clk_start_pin, INPUT_PULLDOWN);
   #endif
 
   DAISY.begin(AudioCallback);
@@ -154,18 +154,44 @@ void loop() {
   is_to_touched = touch.IsTouched(10);
   is_ch_touched = touch.IsTouched(11);
 
-  #ifdef EXTERNAL_SYNC_TRS
   auto arp_mode_value = arp_mode_switch.Value();
+
+  #ifdef EXTERNAL_SYNC_TRS
   bool ext_latch_on = digitalRead(clk_start_pin) == HIGH;
-  if (ext_latch_on) {
-    bass.SetArpOn(arp_mode_value > 0);
-    bass.SetLatch(arp_mode_value > 1 || (arp_mode_value > 0 && ext_latch_on));
+  static bool prev_arp_active = false;
+  static bool ext_sync_was_on = false;
+
+  bool arp_active = arp_mode_value > 0;
+  if (arp_active != prev_arp_active) {
+    bass.SetArpOn(arp_active);
+    prev_arp_active = arp_active;
+  }
+
+  if (arp_active) {
+    bool sync_state_changed = ext_latch_on != ext_sync_was_on;
+    ext_sync_was_on = ext_latch_on;
+    
+    if (ext_latch_on) {
+      if (bass.IsPaused()) {
+        bass.Resume();
+      }
+      
+      bass.SetLatch(arp_mode_value >= 1);
+    } else {
+      if (arp_mode_value == 1) {
+        if (!bass.IsPaused() && sync_state_changed) {
+          bass.Pause();
+          
+          bass.SetLatch(true);
+        }
+      } else {
+        bass.SetLatch(arp_mode_value > 1);
+      }
+    }
   } else {
-    bass.SetArpOn(arp_mode_value > 0);
-    bass.SetLatch(arp_mode_value > 1);
+    bass.SetLatch(false);
   }
   #else
-  auto arp_mode_value = arp_mode_switch.Value();
   bass.SetArpOn(arp_mode_value > 0);
   bass.SetLatch(arp_mode_value > 1);
   #endif

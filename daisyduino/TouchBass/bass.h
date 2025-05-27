@@ -45,7 +45,8 @@ public:
   _human_note_chance  { 0 },
   _scale_index        { 0 },
   _is_arp_on          { false },
-  _is_latched         { false }
+  _is_latched         { false },
+  _is_paused          { false }
   {
     _reverb_in.fill(0);
     _reverb_out.fill(0);
@@ -128,6 +129,28 @@ public:
       if (!_arp.HasNote()) Reset();
     }
     _is_latched = latch;
+  }
+
+  void Pause() {
+    if (_is_arp_on && !_is_paused) {
+      _is_paused = true;
+      _clock.Stop();
+    }
+  }
+
+  void Resume() {
+    if (_is_arp_on && _is_paused) {
+      _is_paused = false;
+      _clock.Run();
+    }
+  }
+
+  bool IsPaused() const {
+    return _is_paused;
+  }
+  
+  bool IsArpOn() const {
+    return _is_arp_on;
   }
 
   void ToggleMonoPoly() {
@@ -341,6 +364,7 @@ private:
   
   bool _is_arp_on;
   bool _is_latched;
+  bool _is_paused;
   std::array<bool, kNotesCount> _hold;
 };
 
