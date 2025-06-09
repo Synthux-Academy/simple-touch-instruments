@@ -153,4 +153,5 @@ Download the [Binary file](https://github.com/Synthux-Academy/simple-touch-instr
 - P11 + P0/P02 - scale (one of the three)
 - P03...P09 - notes
 - P10 + P11 - monophonic / paraphonic mode
-  
+
+<img src="diagram.png" width="600"/>

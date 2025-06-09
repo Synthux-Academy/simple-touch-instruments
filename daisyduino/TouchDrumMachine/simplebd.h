@@ -54,7 +54,7 @@ private:
   Adsr _amp_env;
   Adsr _freq_env;
   WhiteNoise _noise;
-  LUTSinOsc<> _osc;
+  LUTSinOsc _osc;
   float _noise_level = .03f;
   float _base_freq = 50.f;
 };
