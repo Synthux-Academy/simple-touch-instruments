@@ -48,11 +48,17 @@ static MValue osc_1_shape;
 static MValue human_env_value;
 static MValue verb_value;
 
-// Unomment if you're planning using external sync
+// Uncomment if you're planning using external sync (mono jack - with clock signal only)
 // #define EXTERNAL_SYNC
+// Uncomment if you're planning using external sync24 (with stereo jack - clock and start/stop signals)
+// #define EXTERNAL_SYNC_TRS
 
 #ifdef EXTERNAL_SYNC
-static const int clk_pin = D(S31);
+static const int clk_pin = D(S43);
+#endif
+#ifdef EXTERNAL_SYNC_TRS
+static const int clk_pin = D(S43);
+static const int clk_start_pin = D(S42);
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -123,6 +129,10 @@ void setup() {
   #ifdef EXTERNAL_SYNC
   pinMode(clk_pin, INPUT);
   #endif
+  #ifdef EXTERNAL_SYNC_TRS
+  pinMode(clk_pin, INPUT);
+  pinMode(clk_start_pin, INPUT_PULLDOWN);
+  #endif
 
   DAISY.begin(AudioCallback);
 }
@@ -135,6 +145,9 @@ void loop() {
   #ifdef EXTERNAL_SYNC
   bass.ProcessClockIn(!digitalRead(clk_pin));
   #endif
+  #ifdef EXTERNAL_SYNC_TRS
+  bass.ProcessClockIn(!digitalRead(clk_pin));
+  #endif
 
   touch.Process();
 
@@ -142,8 +155,46 @@ void loop() {
   is_ch_touched = touch.IsTouched(11);
 
   auto arp_mode_value = arp_mode_switch.Value();
+
+  #ifdef EXTERNAL_SYNC_TRS
+  bool ext_latch_on = digitalRead(clk_start_pin) == HIGH;
+  static bool prev_arp_active = false;
+  static bool ext_sync_was_on = false;
+
+  bool arp_active = arp_mode_value > 0;
+  if (arp_active != prev_arp_active) {
+    bass.SetArpOn(arp_active);
+    prev_arp_active = arp_active;
+  }
+
+  if (arp_active) {
+    bool sync_state_changed = ext_latch_on != ext_sync_was_on;
+    ext_sync_was_on = ext_latch_on;
+    
+    if (ext_latch_on) {
+      if (bass.IsPaused()) {
+        bass.Resume();
+      }
+      
+      bass.SetLatch(arp_mode_value >= 1);
+    } else {
+      if (arp_mode_value == 1) {
+        if (!bass.IsPaused() && sync_state_changed) {
+          bass.Pause();
+          
+          bass.SetLatch(true);
+        }
+      } else {
+        bass.SetLatch(arp_mode_value > 1);
+      }
+    }
+  } else {
+    bass.SetLatch(false);
+  }
+  #else
   bass.SetArpOn(arp_mode_value > 0);
   bass.SetLatch(arp_mode_value > 1);
+  #endif
 
   auto osc1_value = osc1_mult_knob.Process();
   osc_1_freq.SetActive(!is_to_touched, osc1_value);
