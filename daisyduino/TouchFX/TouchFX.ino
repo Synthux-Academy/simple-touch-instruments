@@ -150,6 +150,9 @@ float bus1;
 void AudioCallback(float **in, float **out, size_t size) {
   for (size_t i = 0; i < size; i++) {
     auto t = dly_time + 0.25 * lfo.Process();
+    if(t < 0) {
+      t = 0;
+    }
     dly[0].SetDelayTime(t);
     dly[1].SetDelayTime(t);
 
@@ -247,12 +250,12 @@ void loop() {
   //PROCESS TOUCH SENSOR
   touch.Process();
 
-  lfo.SetFreq(fmap(dly_mod_speed_knob.Process(), 1.0, 500.0));
-  lfo.SetAmp(fmap(dly_mod_amount_knob.Process(), 0.f, 0.8f));  
+  lfo.SetFreq(fmap(dly_mod_speed_knob.Process(), 0.05, 10.0));
+  lfo.SetAmp(fmap(dly_mod_amount_knob.Process(), 0.f, 0.05f));  
 
   //Process knob values
   dly_mix = dly_mix_knob.Process();
-  dly_time = fmap(dly_time_fader.Process(), 0.f, 5.f, Mapping::EXP);
+  dly_time = fmap(dly_time_fader.Process(), 0.01f, 5.f, Mapping::EXP);
   auto dly_fb = dly_fb_knob.Process() * 1.02;
   dly[0].SetFeedback(dly_fb);
   dly[1].SetFeedback(dly_fb);
