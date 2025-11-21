@@ -30,6 +30,7 @@ class Touch {
           delay(200);
         }
       }
+      _cap.setAutoconfig(true);
     }
 
     // Register note on callback
