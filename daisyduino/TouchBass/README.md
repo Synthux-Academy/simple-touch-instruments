@@ -1,5 +1,7 @@
 # THIS IS SIMPLE BASS
 
+⚠️ This is archived version. Up to date version including MIDI functionality and latests fixes is [here](https://github.com/Synthux-Academy/TouchBass). ⚠️
+
 ## QUICK INSTALL
 Download the [Binary file](https://github.com/Synthux-Academy/simple-touch-instruments/raw/main/daisyduino/TouchBass/TouchBass.bin) and flash using the [Daisy Seed web programmer](https://electro-smith.github.io/Programmer/)
 
