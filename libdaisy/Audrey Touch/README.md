@@ -1,7 +1,7 @@
 ## 🪴 Audrey II Touch Faceplate
 
 ## QUICK INSTALL
-Download the [Binary file](https://github.com/Synthux-Academy/simple-touch-instruments/raw/main/libdaisy/Audrey%20Touch/Audrey%20Touch%20V02.bin) and flash using the [Daisy Seed web programmer](https://flash.daisy.audio/)
+Download the [Binary file](https://github.com/Synthux-Academy/simple-touch-instruments/raw/refs/heads/main/libdaisy/Audrey%20Touch/AudreyTouchV05.bin) and flash using the [Daisy Seed web programmer](https://flash.daisy.audio/)
 
 ---
 
