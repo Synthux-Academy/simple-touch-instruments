@@ -13,11 +13,13 @@ Download the [Binary file](https://github.com/Synthux-Academy/AudreyTouch/releas
 
 ---
 
-📘 **Manual coming soon!**
 
-![Audrey-Touch](https://github.com/user-attachments/assets/ead3868f-cd63-43c0-a0a0-303965cc6bd3)
+**Source code**
+
+Is [here](https://github.com/Synthux-Academy/AudreyTouch)
 
 ---
 
-**Source code**
-Is [here](https://github.com/Synthux-Academy/AudreyTouch)
+📘 **Manual coming soon!**
+
+![Audrey-Touch](https://github.com/user-attachments/assets/ead3868f-cd63-43c0-a0a0-303965cc6bd3)
